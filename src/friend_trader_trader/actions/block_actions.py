@@ -1,6 +1,4 @@
 import json
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'friend_trader.settings')
 from django.conf import settings
 
 import requests
