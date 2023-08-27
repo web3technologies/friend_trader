@@ -1,8 +1,6 @@
 from pathlib import Path
-
+from datetime import timedelta
 from decouple import config
-
-
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -19,8 +17,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "django_celery_beat",
+    "django_celery_results",
+    "django_extensions",
     "friend_trader_auth",
     "friend_trader_dispatcher",
+    "friend_trader_trader",
     "web_socket_manager"
 ]
 AUTH_USER_MODEL = 'friend_trader_auth.User'
@@ -89,6 +91,17 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+CELERY_BROKER_URL = 'amqp://'
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_RESULT_EXPIRES = timedelta(days=30)
+CELERY_TASK_TRACK_STARTED = True
+CELERY_ENABLE_REMOTE_CONTROL = False
+CELERY_SEND_EVENTS = False
+CELERY_COUNTDOWN = 5
 
 
 BLAST_WSS_API=config('BLAST_WSS_API')

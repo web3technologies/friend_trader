@@ -1,0 +1,64 @@
+{
+    "version": "0.1.0",
+    "configurations": [
+        {
+            "name": "FriendTrader Backend",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/manage.py",
+            "args": [
+                "runserver"
+            ],
+            "django": true,
+            "justMyCode": true
+        },
+        {
+            "name": "Celery",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/venv/bin/celery",
+            "args": [
+                "-A",
+                "friend_trader_dispatcher",
+                "worker",
+                "-l",
+                "info",
+                "-B"
+            ],
+            "env":{
+                "DJANGO_SETTINGS_MODULE": "friend_trader.settings",
+            }
+        },
+        {
+            "name": "FriendTraderWS",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/src/web_socket_manager/friend_trader_ws.py",
+        },
+        {
+            "name": "Shell Plus",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/manage.py",
+            "args": [
+                "shell_plus"
+            ],
+            "django": true,
+            "justMyCode": true
+        },
+    ],
+    "compounds": [
+        {
+            "name": "Application",
+            "configurations": [
+                "FriendTrader Backend",
+                "FriendTraderWS",
+                "Celery",
+            ]
+        }
+    ]
+}
