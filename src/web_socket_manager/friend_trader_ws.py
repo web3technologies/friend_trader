@@ -11,7 +11,7 @@ import websockets
 from web3 import Web3
 
 
-class friend_trader:
+class FriendTraderListener:
     blast_wss = f"wss://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
     CONTRACT_ADDRESS = "0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4"
     KOSSETTO_URL = "https://prod-api.kosetto.com/users"
@@ -86,7 +86,7 @@ class friend_trader:
             return twitter_usernames
 
 if __name__ == "__main__":
-    friend_trader = friend_trader()
+    friend_trader = FriendTraderListener()
     res = asyncio.get_event_loop().run_until_complete(friend_trader.listen_for_new_blocks())
     print(res)
 
