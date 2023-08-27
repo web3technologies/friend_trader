@@ -1,0 +1,6 @@
+*.sol
+venv/
+*.pyc
+.env
+*.egg-info
+*.sqlite3
