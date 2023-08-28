@@ -4,6 +4,7 @@ from django.conf import settings
 import datetime
 import json
 import pytz
+import random
 import requests
 import tweepy
 from tweepy.errors import NotFound, TweepyException
@@ -14,7 +15,8 @@ class TwitterForbiddenException(Exception):
     ...
 
 class BlockActions:
-    blast_wss = f"wss://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
+    blast_url = f"https://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
+    ankr_url = "https://rpc.ankr.com/base"
     CONTRACT_ADDRESS = "0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4"
     KOSSETTO_URL = "https://prod-api.kosetto.com/users"
     
@@ -25,8 +27,12 @@ class BlockActions:
             access_token=settings.TWITTER_ACCESS_TOKEN,
             access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET
         )
+        self.web3_providers = [
+            Web3(Web3.HTTPProvider(self.ankr_url)),
+            Web3(Web3.HTTPProvider(self.blast_url))
+        ]
         self.tweepy_client = tweepy.API(twitter_auth)
-        self.web3 = Web3(Web3.WebsocketProvider(self.blast_wss))
+        self.web3 = random.choice(self.web3_providers)
         with open(settings.BASE_DIR / "src" / "web_socket_manager" / "abi.json", "r") as abis:
             contract_abis = json.loads(abis.read())
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=contract_abis)
@@ -63,9 +69,9 @@ class BlockActions:
     
     def __perform_block_actions(self, block_hash):
         twitter_userdata, notification_data = [], []
-        web3 = Web3(Web3.WebsocketProvider(self.blast_wss))
-        block = web3.eth.get_block(block_hash, full_transactions=True)
+        block = self.web3.eth.get_block(block_hash, full_transactions=True)
         print(f"Block # {block.number}")
+        print(self.web3.provider.endpoint_uri)
         for tx in block.transactions:
             if tx["to"] == self.contract.address:
                 function, function_input = self.contract.decode_function_input(tx.input)
