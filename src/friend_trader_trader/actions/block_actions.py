@@ -76,7 +76,7 @@ class BlockActions:
                         try:
                             twitter_user_data = self.tweepy_client.get_user(screen_name=twitter_username)
                             buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(shares_subject,1).call(), "ether")
-                            msg = f"TwitterName: {twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: {buy_price_after_fee}, Total Shares: {self.contract.functions.sharesSupply(shares_subject).call()}"
+                            msg = f"TwitterName: {twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: Ξ{buy_price_after_fee}, Total Shares: {self.contract.functions.sharesSupply(shares_subject).call()}"
                             msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
                             print(msg)
                             twitter_userdata.append(msg)
