@@ -1,6 +1,10 @@
-import json
-from django.conf import settings
 
+
+from django.conf import settings
+import datetime
+import json
+from io import BytesIO
+import pytz
 import requests
 import tweepy
 from tweepy.errors import NotFound
@@ -25,8 +29,35 @@ class BlockActions:
             contract_abis = json.loads(abis.read())
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=contract_abis)
         
+    def __send_discord_messages(self, notification_data):
+        for notification in notification_data:
+            image_response = requests.get(notification["image_url"])
+            image_response.raise_for_status()  # Raise an exception if the request failed
+            image_bytes = BytesIO(image_response.content)
+            files = {
+                "file": (notification["image_url"].split("/")[-1], image_bytes),
+                "payload_json": (None, '{"content": "' + notification["msg"] + '"}')
+            }
+            
+            response = requests.post(settings.DISCORD_WEBHOOK, files=files)
+
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as err:
+                print(err)
+            else:
+                print(f"Payload delivered successfully, code {response.status_code}.")
+            
+            
+    def __convert_to_central_time(self, eth_timestamp):
+        utc_time = datetime.datetime.utcfromtimestamp(eth_timestamp)
+        utc_time = pytz.utc.localize(utc_time)
+        central_time = utc_time.astimezone(pytz.timezone('US/Central'))
+        return central_time
+        
     
     def __perform_block_actions(self, block_hash):
+        twitter_userdata, notification_data = [], []
         web3 = Web3(Web3.WebsocketProvider(self.blast_wss))
         block = web3.eth.get_block(block_hash, full_transactions=True)
         print(f"Block # {block.number}")
@@ -38,20 +69,31 @@ class BlockActions:
                         shares_subject = function_input.get('sharesSubject')
                         res = requests.get(f"{self.KOSSETTO_URL}/{shares_subject}", timeout=3)
                         res.raise_for_status()
-                        twitter_username = res.json().get("twitterUsername")
+                        kossetto_data = res.json()
+                        twitter_username = kossetto_data.get("twitterUsername")
                         try:
                             twitter_user_data = self.tweepy_client.get_user(screen_name=twitter_username)
-                            print(f"{twitter_username}: {twitter_user_data.followers_count} followers, following: {twitter_user_data.friends_count}")
                             buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(shares_subject,1).call(), "ether")
-                            print(f"Buy Price: {buy_price_after_fee}")
-                            print(f"Total Shares: {self.contract.functions.sharesSupply(shares_subject).call()}")
+                            msg = f"{twitter_username}: Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: {buy_price_after_fee}, Total Shares: {self.contract.functions.sharesSupply(shares_subject).call()}"
+                            msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
+                            print(msg)
+                            twitter_userdata.append(msg)
+                            if twitter_user_data.followers_count >= 100:
+                                notification_data.append({
+                                    "msg": msg,
+                                    "image_url": kossetto_data.get("twitterPfpUrl")
+                                })
                         except NotFound as e:
                             print(f"{twitter_username} not found")
                     except requests.Timeout:
                         print("timeout")
                     except requests.HTTPError:
                         print("error")
-        return block_hash
+        return twitter_userdata, notification_data
+    
                         
     def run(self, block_hash):
-        return self.__perform_block_actions(block_hash)
+        users, notification_data = self.__perform_block_actions(block_hash)
+        if notification_data:
+            self.__send_discord_messages(notification_data)
+        return users
