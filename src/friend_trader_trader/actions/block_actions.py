@@ -6,9 +6,12 @@ import json
 import pytz
 import requests
 import tweepy
-from tweepy.errors import NotFound
+from tweepy.errors import NotFound, TweepyException
 from web3 import Web3
 
+
+class TwitterForbiddenException(Exception):
+    ...
 
 class BlockActions:
     blast_wss = f"wss://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
@@ -75,19 +78,26 @@ class BlockActions:
                         twitter_username = kossetto_data.get("twitterUsername")
                         try:
                             twitter_user_data = self.tweepy_client.get_user(screen_name=twitter_username)
-                            buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(shares_subject,1).call(), "ether")
-                            msg = f"TwitterName: {twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: Ξ{buy_price_after_fee}, Total Shares: {self.contract.functions.sharesSupply(shares_subject).call()}"
-                            msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
-                            print(msg)
-                            twitter_userdata.append(msg)
-                            if twitter_user_data.followers_count >= 300_000:
+                            if twitter_user_data.followers_count >= 100_000:
+                                buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(shares_subject,1).call(), "ether")
+                                msg = f"TwitterName: {twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: Ξ{buy_price_after_fee}, Total Shares: {self.contract.functions.sharesSupply(shares_subject).call()}"
+                                msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
+                                print(msg)
+                                twitter_userdata.append(msg)
                                 notification_data.append({
                                     "msg": msg,
                                     "image_url": kossetto_data.get("twitterPfpUrl"),
                                     "twitter_name": twitter_username
                                 })
+                            else:
+                                print(f"Not enough followers: {twitter_username}")
                         except NotFound as e:
                             print(f"{twitter_username} not found")
+                        except TweepyException as e:
+                            if 63 in e.api_codes:
+                                raise TwitterForbiddenException()
+                            else:
+                                raise e
                     except requests.Timeout:
                         print("timeout")
                     except requests.HTTPError:
