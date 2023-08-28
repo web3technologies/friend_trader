@@ -3,7 +3,6 @@
 from django.conf import settings
 import datetime
 import json
-from io import BytesIO
 import pytz
 import requests
 import tweepy
@@ -31,16 +30,19 @@ class BlockActions:
         
     def __send_discord_messages(self, notification_data):
         for notification in notification_data:
-            image_response = requests.get(notification["image_url"])
-            image_response.raise_for_status()  # Raise an exception if the request failed
-            image_bytes = BytesIO(image_response.content)
-            files = {
-                "file": (notification["image_url"].split("/")[-1], image_bytes),
-                "payload_json": (None, '{"content": "' + notification["msg"] + '"}')
+            embed = {
+                "title": notification['twitter_name'],
+                "url": f"https://twitter.com/{notification['twitter_name']}",
+                "description": notification["msg"],
+                "color": 7506394,
+                "thumbnail": {
+                    "url": notification["image_url"]
+                }
             }
-            
-            response = requests.post(settings.DISCORD_WEBHOOK, files=files)
-
+            payload = {
+                "embeds": [embed]
+            }
+            response = requests.post(settings.DISCORD_WEBHOOK, json=payload)
             try:
                 response.raise_for_status()
             except requests.exceptions.HTTPError as err:
@@ -78,10 +80,11 @@ class BlockActions:
                             msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
                             print(msg)
                             twitter_userdata.append(msg)
-                            if twitter_user_data.followers_count >= 100:
+                            if twitter_user_data.followers_count >= 300_000:
                                 notification_data.append({
                                     "msg": msg,
-                                    "image_url": kossetto_data.get("twitterPfpUrl")
+                                    "image_url": kossetto_data.get("twitterPfpUrl"),
+                                    "twitter_name": twitter_username
                                 })
                         except NotFound as e:
                             print(f"{twitter_username} not found")
