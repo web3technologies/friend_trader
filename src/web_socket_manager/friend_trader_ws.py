@@ -12,7 +12,7 @@ import websockets
 class FriendTraderListener:
     blast_wss = f"wss://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
 
-    async def listen_for_new_blocks(self):
+    async def handle_connection(self):
         async with websockets.connect(self.blast_wss) as ws:
             await ws.send(json.dumps({
                 "id": 1,
@@ -23,18 +23,19 @@ class FriendTraderListener:
             ))
             message = await ws.recv()
             while True:
-                try:
-                    message = await ws.recv()
-                    block_hash = json.loads(message).get('params').get('result').get("hash")
-                    print(block_hash)
-                    perform_block_actions_task.delay(block_hash)
-                except (websockets.ConnectionClosed, websockets.ConnectionClosedError):
-                    # Handle disconnections and attempt to reconnect
-                    print("Connection lost. Reconnecting...")
-                    await ws.connect(self.blast_wss)
-                except Exception as e:
-                    print(f"Error: {e}")
-
+                message = await ws.recv()
+                block_hash = json.loads(message).get('params').get('result').get("hash")
+                perform_block_actions_task.delay(block_hash)
+                
+    async def listen_for_new_blocks(self):
+        try:      
+            await self.handle_connection()
+        except (websockets.ConnectionClosed, websockets.ConnectionClosedError):
+            print("Connection lost. Reconnecting...")
+            await asyncio.sleep(5)
+        except Exception as e:
+            print(f"Error: {e}")
+        
 
 if __name__ == "__main__":
     friend_trader = FriendTraderListener()
