@@ -95,7 +95,7 @@ class BlockActions:
                             print(f"{twitter_username} not found")
                         except TweepyException as e:
                             if 63 in e.api_codes:
-                                raise TwitterForbiddenException()
+                                raise TwitterForbiddenException("403 forbidden from twitter client")
                             else:
                                 raise e
                     except requests.Timeout:
