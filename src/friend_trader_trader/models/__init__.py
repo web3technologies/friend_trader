@@ -1,0 +1,1 @@
+from friend_trader_trader.models.friend_tech_user import FriendTechUser
