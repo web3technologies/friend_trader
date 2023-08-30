@@ -32,7 +32,7 @@ class FriendTraderListener:
             await self.handle_connection()
         except (websockets.ConnectionClosed, websockets.ConnectionClosedError):
             print("Connection lost. Reconnecting...")
-            await asyncio.sleep(5)
+            await self.handle_connection()
         except Exception as e:
             print(f"Error: {e}")
         
