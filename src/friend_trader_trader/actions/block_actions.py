@@ -12,7 +12,7 @@ from web3 import Web3
 from celery.exceptions import MaxRetriesExceededError
 
 
-from friend_trader_trader.models import FriendTechUser, KossettoNotFound
+
 from friend_trader_trader.exceptions.exceptions import TwitterForbiddenException
 
 
@@ -69,7 +69,7 @@ class BlockActions:
         central_time = utc_time.astimezone(pytz.timezone('US/Central'))
         return central_time
     
-    def __fetch_kossetto_data(self, address, block_hash):
+    def __fetch_kossetto_data(self, address):
         try:
             res = requests.get(f"{self.KOSSETTO_URL}/{address}", timeout=3)
             res.raise_for_status()
@@ -80,28 +80,25 @@ class BlockActions:
         except requests.Timeout as e:
             print("timeout")
             try:
-                self.task.retry(exc=e, countdown=60*5)
+                self.task.retry(exc=e, countdown=60)
             except MaxRetriesExceededError:
                 print(f"max retry for address fetch {address}")
                 raise
         except requests.HTTPError as e:
-            print("http error")
-            if e.response.status_code == 404:
-                try:
-                    KossettoNotFound.objects.get_or_create(address=address, defaults={"blockhash": block_hash})
-                    self.task.retry(exc=e, countdown=60*5)
-                except MaxRetriesExceededError:
-                    print(f"max retry for address fetch {address}")
-                    raise
-            else:
-                print(f"Kossetto failed with {e.response.status_code}")
-                raise(e)
+            print(f"{address} not found in kossetto")
 
     def __manage_friend_tech_user(self, shares_subject):
+        from friend_trader_trader.models import FriendTechUser
         try:
             friend_tech_user = FriendTechUser.objects.get(address=shares_subject)
             twitter_username = friend_tech_user.twitter_username
             profile_pic_url = friend_tech_user.twitter_profile_pic
+            if not twitter_username:
+                self.__fetch_kossetto_data(shares_subject)
+                twitter_username, profile_pic_url = self.__fetch_kossetto_data(shares_subject)
+                friend_tech_user.twitter_username = twitter_username
+                friend_tech_user.twitter_profile_pic = profile_pic_url
+                friend_tech_user.save(update_fields=["twitter_username", "twitter_profile_pic"])
         except FriendTechUser.DoesNotExist:
             twitter_username, profile_pic_url = self.__fetch_kossetto_data(shares_subject)
             if shares_subject not in self.friend_tech_users_to_create:
@@ -126,6 +123,23 @@ class BlockActions:
                 raise TwitterForbiddenException("403 forbidden from twitter client")
             else:
                 raise e
+            
+    def __manage_twitter_user_data(self, block, shares_subject, twitter_user_data, twitter_username, profile_pic_url, twitter_userdata:list, notification_data:list):
+        if twitter_user_data.followers_count >= 100_000:
+            buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(shares_subject,1).call(), "ether")
+            shares_count = self.contract.functions.sharesSupply(shares_subject).call()
+            msg = f"TwitterName: {twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: Ξ{buy_price_after_fee}, Total Shares: {shares_count}"
+            msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
+            print(msg)
+            twitter_userdata.append(msg)
+            notification_data.append({
+                "msg": msg,
+                "image_url": profile_pic_url,
+                "twitter_name": twitter_username,
+                "shares_count": shares_count
+            })
+        else:
+            print(f"Not enough followers: {twitter_username}")
         
     def __perform_block_actions(self, block_hash):
         twitter_userdata, notification_data = [], []
@@ -136,30 +150,17 @@ class BlockActions:
                 function, function_input = self.contract.decode_function_input(tx.input)
                 if function.function_identifier == "buyShares":
                     shares_subject = function_input.get('sharesSubject')
-                    twitter_username, profile_pic_url = self.__manage_friend_tech_user(shares_subject, block_hash)
+                    twitter_username, profile_pic_url = self.__manage_friend_tech_user(shares_subject)
                     twitter_user_data = self.__manage_twitter_user(twitter_username)
                     if twitter_user_data:
-                        if twitter_user_data.followers_count >= 100_000:
-                            buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(shares_subject,1).call(), "ether")
-                            shares_count = self.contract.functions.sharesSupply(shares_subject).call()
-                            msg = f"TwitterName: {twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: Ξ{buy_price_after_fee}, Total Shares: {shares_count}"
-                            msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
-                            print(msg)
-                            twitter_userdata.append(msg)
-                            notification_data.append({
-                                "msg": msg,
-                                "image_url": profile_pic_url,
-                                "twitter_name": twitter_username,
-                                "shares_count": shares_count
-                            })
-                        else:
-                            print(f"Not enough followers: {twitter_username}")
+                        self.__manage_twitter_user_data(block, shares_subject, twitter_user_data, twitter_username, profile_pic_url, twitter_userdata, notification_data)
                     else:
                         print("no twitter user data")
                     
         return twitter_userdata, notification_data
             
     def run(self, block_hash):
+        from friend_trader_trader.models import FriendTechUser
         users, notification_data = self.__perform_block_actions(block_hash)
         for notification in notification_data:
             if notification["shares_count"] < 3:
