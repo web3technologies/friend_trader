@@ -1,1 +1,2 @@
 from friend_trader_trader.models.friend_tech_user import FriendTechUser
+from friend_trader_trader.models.kossetto_not_found import KossettoNotFound

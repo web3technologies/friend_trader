@@ -9,7 +9,8 @@ from web3.exceptions import BlockNotFound
     name="perform_block_actions_task", 
     base=BaseCeleryTask,
     autoretry_for=(BlockNotFound, TwitterForbiddenException),
-    retry_backoff=15
+    retry_backoff=15,
+    max_retries=3
     )
 def perform_block_actions_task(self, block_hash):
-    return BlockActions().run(block_hash)
+    return BlockActions(task=self).run(block_hash=block_hash)
