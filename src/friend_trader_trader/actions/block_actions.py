@@ -70,13 +70,13 @@ class BlockActions:
         return central_time
     
     def __fetch_kossetto_data(self, address):
+        twitter_username, profile_pic_url = None, None
         try:
             res = requests.get(f"{self.KOSSETTO_URL}/{address}", timeout=3)
             res.raise_for_status()
             kossetto_data = res.json()
             twitter_username = kossetto_data.get("twitterUsername")
             profile_pic_url = kossetto_data.get("twitterPfpUrl")
-            return twitter_username, profile_pic_url
         except requests.Timeout as e:
             print("timeout")
             try:
@@ -86,6 +86,7 @@ class BlockActions:
                 raise
         except requests.HTTPError as e:
             print(f"{address} not found in kossetto")
+        return twitter_username, profile_pic_url
 
     def __manage_friend_tech_user(self, shares_subject):
         from friend_trader_trader.models import FriendTechUser
@@ -94,7 +95,6 @@ class BlockActions:
             twitter_username = friend_tech_user.twitter_username
             profile_pic_url = friend_tech_user.twitter_profile_pic
             if not twitter_username:
-                self.__fetch_kossetto_data(shares_subject)
                 twitter_username, profile_pic_url = self.__fetch_kossetto_data(shares_subject)
                 friend_tech_user.twitter_username = twitter_username
                 friend_tech_user.twitter_profile_pic = profile_pic_url
