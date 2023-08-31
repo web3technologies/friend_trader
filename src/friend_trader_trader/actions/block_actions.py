@@ -20,7 +20,6 @@ class BlockActions:
     blast_url = f"https://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
     ankr_url = "https://rpc.ankr.com/base"
     CONTRACT_ADDRESS = "0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4"
-    KOSSETTO_URL = "https://prod-api.kosetto.com/users"
 
     with open(settings.BASE_DIR / "src" / "web_socket_manager" / "abi.json", "r") as abis:
         contract_abis = json.loads(abis.read())
