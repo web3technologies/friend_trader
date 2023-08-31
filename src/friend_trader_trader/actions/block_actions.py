@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from friend_trader_core.clients import kossetto_client
-from friend_trader_trader.models import Block, FriendTechUser, ShareBuy, ShareSell
+from friend_trader_trader.models import Block, FriendTechUser
 from friend_trader_trader.exceptions.exceptions import TwitterForbiddenException
 
 
@@ -44,8 +44,9 @@ class BlockActions:
         self.friend_tech_users_created = []
         self.twitter_userdata = []
         self.notification_data =  []
-        self.share_buys_to_create = []
-        self.share_sells_to_create = []
+        self.transcations_to_create = []
+        self.share_prices_to_create = []
+
         
     def __send_discord_messages(self, notification, webhook_url):
         embed = {
@@ -160,14 +161,6 @@ class BlockActions:
                         self.__manage_twitter_user_data(fetched_block, shares_subject, twitter_user_data, friend_tech_user.twitter_username, friend_tech_user.twitter_profile_pic)
                     else:
                         print("no twitter user data")
-                    self.share_buys_to_create.append(
-                        ShareBuy(
-                            buyer=friend_tech_user,
-                            price=None,
-                            block=self.block,
-                            transaction_timestamp=tx.timestamp
-                        )
-                    )
                 elif function.function_identifier == "sellShares":
                     pass
                 else:
@@ -180,9 +173,9 @@ class BlockActions:
                 self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK_NEW_USER_GREATER_THAN_100K)
             else:
                 self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK)
-        if self.share_buys_to_create:
+        if self.transcations_to_create:
             ShareBuy.objects.bulk_create(self.share_buys_to_create)
-        if self.share_sells_to_create:
+        if self.share_prices_to_create:
             ShareSell.objects.bulk_create(self.share_sells_to_create)
         self.block.date_sniffed = timezone.now()
         self.block.save(update_fields=["date_sniffed"])
