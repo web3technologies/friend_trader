@@ -13,4 +13,4 @@ from web3.exceptions import BlockNotFound
     max_retries=3
     )
 def perform_block_actions_task(self, block_hash):
-    return BlockActions(task=self).run(block_hash=block_hash)
+    return BlockActions(task=self, block_hash=block_hash).run()

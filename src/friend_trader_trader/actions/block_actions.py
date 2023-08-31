@@ -1,6 +1,3 @@
-
-
-from django.conf import settings
 import datetime
 import json
 import pytz
@@ -11,8 +8,10 @@ from tweepy.errors import NotFound as TwitterUserNotFound, TweepyException
 from web3 import Web3
 from celery.exceptions import MaxRetriesExceededError
 
+from django.conf import settings
+from django.utils import timezone
 
-
+from friend_trader_trader.models import Block, FriendTechUser
 from friend_trader_trader.exceptions.exceptions import TwitterForbiddenException
 
 
@@ -22,8 +21,9 @@ class BlockActions:
     CONTRACT_ADDRESS = "0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4"
     KOSSETTO_URL = "https://prod-api.kosetto.com/users"
     
-    def __init__(self, task) -> None:
+    def __init__(self, task, block_hash) -> None:
         self.task = task
+        self.block = Block.objects.create(block_hash=block_hash)
         twitter_auth = tweepy.OAuth1UserHandler(
             consumer_key=settings.TWITTER_CONSUMER_KEY,
             consumer_secret=settings.TWITTER_CONSUMER_SECRET,
@@ -89,7 +89,6 @@ class BlockActions:
         return twitter_username, profile_pic_url
 
     def __manage_friend_tech_user(self, shares_subject):
-        from friend_trader_trader.models import FriendTechUser
         try:
             friend_tech_user = FriendTechUser.objects.get(address=shares_subject)
             twitter_username = friend_tech_user.twitter_username
@@ -141,11 +140,14 @@ class BlockActions:
         else:
             print(f"Not enough followers: {twitter_username}")
         
-    def __perform_block_actions(self, block_hash):
+    def __perform_block_actions(self):
         twitter_userdata, notification_data = [], []
-        block = self.web3.eth.get_block(block_hash, full_transactions=True)
-        print(f"Block # {block.number}")
-        for tx in block.transactions:
+        fetched_block = self.web3.eth.get_block(self.block.block_hash, full_transactions=True)
+        self.block.block_number = fetched_block.number
+        self.block.block_timestamp = fetched_block.timestamp
+        self.block.save(update_fields=["block_number", "block_timestamp"])
+        print(f"Block # {fetched_block.number}")
+        for tx in fetched_block.transactions:
             if tx["to"] == self.contract.address:
                 function, function_input = self.contract.decode_function_input(tx.input)
                 if function.function_identifier == "buyShares":
@@ -153,15 +155,14 @@ class BlockActions:
                     twitter_username, profile_pic_url = self.__manage_friend_tech_user(shares_subject)
                     twitter_user_data = self.__manage_twitter_user(twitter_username)
                     if twitter_user_data:
-                        self.__manage_twitter_user_data(block, shares_subject, twitter_user_data, twitter_username, profile_pic_url, twitter_userdata, notification_data)
+                        self.__manage_twitter_user_data(fetched_block, shares_subject, twitter_user_data, twitter_username, profile_pic_url, twitter_userdata, notification_data)
                     else:
                         print("no twitter user data")
                     
         return twitter_userdata, notification_data
             
-    def run(self, block_hash):
-        from friend_trader_trader.models import FriendTechUser
-        users, notification_data = self.__perform_block_actions(block_hash)
+    def run(self):
+        users, notification_data = self.__perform_block_actions()
         for notification in notification_data:
             if notification["shares_count"] < 3:
                 self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK_NEW_USER_GREATER_THAN_100K)
@@ -169,4 +170,6 @@ class BlockActions:
                 self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK)
         if self.friend_tech_users_to_create:
             FriendTechUser.objects.bulk_create([friend_tech_user for _, friend_tech_user in self.friend_tech_users_to_create.items()])
+        self.block.date_sniffed = timezone.now()
+        self.block.save(update_fields=["date_sniffed"])
         return users
