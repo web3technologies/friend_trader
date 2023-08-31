@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from friend_trader_core.clients import kossetto_client
-from friend_trader_trader.models import Block, FriendTechUser
+from friend_trader_trader.models import Block, FriendTechUser, ShareBuy, ShareSell
 from friend_trader_trader.exceptions.exceptions import TwitterForbiddenException
 
 
@@ -41,9 +41,11 @@ class BlockActions:
         self.block = Block.objects.create(block_hash=block_hash)
         self.web3 = random.choice(self.web3_providers)
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
-        self.friend_tech_users_to_create = {}
+        self.friend_tech_users_created = []
         self.twitter_userdata = []
         self.notification_data =  []
+        self.share_buys_to_create = []
+        self.share_sells_to_create = []
         
     def __send_discord_messages(self, notification, webhook_url):
         embed = {
@@ -102,16 +104,15 @@ class BlockActions:
                 friend_tech_user.save(update_fields=["twitter_username", "twitter_profile_pic"])
         except FriendTechUser.DoesNotExist:
             twitter_username, profile_pic_url = self.__fetch_kossetto_data(shares_subject)
-            if shares_subject not in self.friend_tech_users_to_create:
-                self.friend_tech_users_to_create[shares_subject] = (
-                FriendTechUser(
+            if shares_subject not in self.friend_tech_users_created:
+                friend_tech_user = FriendTechUser(
                         address=shares_subject,
                         twitter_username=twitter_username,
                         twitter_profile_pic=profile_pic_url
-                    ) 
-                )
+                    )
+                self.friend_tech_users_created.append(friend_tech_user)
             
-        return twitter_username, profile_pic_url
+        return friend_tech_user
     
     def __manage_twitter_user(self, twitter_username):
         try:
@@ -153,14 +154,25 @@ class BlockActions:
                 function, function_input = self.contract.decode_function_input(tx.input)
                 if function.function_identifier == "buyShares":
                     shares_subject = function_input.get('sharesSubject')
-                    twitter_username, profile_pic_url = self.__manage_friend_tech_user(shares_subject)
-                    twitter_user_data = self.__manage_twitter_user(twitter_username)
+                    friend_tech_user = self.__manage_friend_tech_user(shares_subject)
+                    twitter_user_data = self.__manage_twitter_user(friend_tech_user.twitter_username)
                     if twitter_user_data:
-                        self.__manage_twitter_user_data(fetched_block, shares_subject, twitter_user_data, twitter_username, profile_pic_url)
+                        self.__manage_twitter_user_data(fetched_block, shares_subject, twitter_user_data, friend_tech_user.twitter_username, friend_tech_user.twitter_profile_pic)
                     else:
                         print("no twitter user data")
+                    self.share_buys_to_create.append(
+                        ShareBuy(
+                            buyer=friend_tech_user,
+                            price=None,
+                            block=self.block,
+                            transaction_timestamp=tx.timestamp
+                        )
+                    )
+                elif function.function_identifier == "sellShares":
+                    pass
+                else:
+                    pass
                     
-            
     def run(self):
         self.__perform_block_actions()
         for notification in self.notification_data:
@@ -168,8 +180,10 @@ class BlockActions:
                 self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK_NEW_USER_GREATER_THAN_100K)
             else:
                 self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK)
-        if self.friend_tech_users_to_create:
-            FriendTechUser.objects.bulk_create([friend_tech_user for _, friend_tech_user in self.friend_tech_users_to_create.items()])
+        if self.share_buys_to_create:
+            ShareBuy.objects.bulk_create(self.share_buys_to_create)
+        if self.share_sells_to_create:
+            ShareSell.objects.bulk_create(self.share_sells_to_create)
         self.block.date_sniffed = timezone.now()
         self.block.save(update_fields=["date_sniffed"])
         return self.users
