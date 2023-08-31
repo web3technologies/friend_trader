@@ -1,7 +1,7 @@
 import json
 import os
 import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'friend_trader.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'friend_trader.settings.settings')
 django.setup()
 from django.conf import settings
 import asyncio

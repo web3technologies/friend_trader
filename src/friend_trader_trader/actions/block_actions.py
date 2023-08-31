@@ -11,6 +11,7 @@ from celery.exceptions import MaxRetriesExceededError
 from django.conf import settings
 from django.utils import timezone
 
+from friend_trader_core.clients import kossetto_client
 from friend_trader_trader.models import Block, FriendTechUser
 from friend_trader_trader.exceptions.exceptions import TwitterForbiddenException
 
@@ -72,9 +73,7 @@ class BlockActions:
     def __fetch_kossetto_data(self, address):
         twitter_username, profile_pic_url = None, None
         try:
-            res = requests.get(f"{self.KOSSETTO_URL}/{address}", timeout=3)
-            res.raise_for_status()
-            kossetto_data = res.json()
+            kossetto_data = kossetto_client.get_kossetto_user(address=address)
             twitter_username = kossetto_data.get("twitterUsername")
             profile_pic_url = kossetto_data.get("twitterPfpUrl")
         except requests.Timeout as e:
