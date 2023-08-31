@@ -21,26 +21,30 @@ class BlockActions:
     ankr_url = "https://rpc.ankr.com/base"
     CONTRACT_ADDRESS = "0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4"
     KOSSETTO_URL = "https://prod-api.kosetto.com/users"
-    
-    def __init__(self, task, block_hash) -> None:
-        self.task = task
-        self.block = Block.objects.create(block_hash=block_hash)
-        twitter_auth = tweepy.OAuth1UserHandler(
+
+    with open(settings.BASE_DIR / "src" / "web_socket_manager" / "abi.json", "r") as abis:
+        contract_abis = json.loads(abis.read())
+
+    twitter_auth = tweepy.OAuth1UserHandler(
             consumer_key=settings.TWITTER_CONSUMER_KEY,
             consumer_secret=settings.TWITTER_CONSUMER_SECRET,
             access_token=settings.TWITTER_ACCESS_TOKEN,
             access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET
         )
-        self.web3_providers = [
-            Web3(Web3.HTTPProvider(self.ankr_url)),
-            Web3(Web3.HTTPProvider(self.blast_url))
+    tweepy_client = tweepy.API(twitter_auth)
+    web3_providers = [
+            Web3(Web3.HTTPProvider(ankr_url)),
+            Web3(Web3.HTTPProvider(blast_url))
         ]
-        self.tweepy_client = tweepy.API(twitter_auth)
+    
+    def __init__(self, task, block_hash) -> None:
+        self.task = task
+        self.block = Block.objects.create(block_hash=block_hash)
         self.web3 = random.choice(self.web3_providers)
-        with open(settings.BASE_DIR / "src" / "web_socket_manager" / "abi.json", "r") as abis:
-            contract_abis = json.loads(abis.read())
-        self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=contract_abis)
+        self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
         self.friend_tech_users_to_create = {}
+        self.twitter_userdata = []
+        self.notification_data =  []
         
     def __send_discord_messages(self, notification, webhook_url):
         embed = {
@@ -140,7 +144,6 @@ class BlockActions:
             print(f"Not enough followers: {twitter_username}")
         
     def __perform_block_actions(self):
-        twitter_userdata, notification_data = [], []
         fetched_block = self.web3.eth.get_block(self.block.block_hash, full_transactions=True)
         self.block.block_number = fetched_block.number
         self.block.block_timestamp = fetched_block.timestamp
@@ -158,11 +161,10 @@ class BlockActions:
                     else:
                         print("no twitter user data")
                     
-        return twitter_userdata, notification_data
             
     def run(self):
-        users, notification_data = self.__perform_block_actions()
-        for notification in notification_data:
+        self.__perform_block_actions()
+        for notification in self.notification_data:
             if notification["shares_count"] < 3:
                 self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK_NEW_USER_GREATER_THAN_100K)
             else:
@@ -171,4 +173,4 @@ class BlockActions:
             FriendTechUser.objects.bulk_create([friend_tech_user for _, friend_tech_user in self.friend_tech_users_to_create.items()])
         self.block.date_sniffed = timezone.now()
         self.block.save(update_fields=["date_sniffed"])
-        return users
+        return self.users
