@@ -126,15 +126,15 @@ class BlockActions:
             else:
                 raise e
             
-    def __manage_twitter_user_data(self, block, shares_subject, twitter_user_data, twitter_username, profile_pic_url, twitter_userdata:list, notification_data:list):
+    def __manage_twitter_user_data(self, block, shares_subject, twitter_user_data, twitter_username, profile_pic_url):
         if twitter_user_data.followers_count >= 100_000:
             buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(shares_subject,1).call(), "ether")
             shares_count = self.contract.functions.sharesSupply(shares_subject).call()
             msg = f"TwitterName: {twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: Ξ{buy_price_after_fee}, Total Shares: {shares_count}"
             msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
             print(msg)
-            twitter_userdata.append(msg)
-            notification_data.append({
+            self.twitter_userdata.append(msg)
+            self.notification_data.append({
                 "msg": msg,
                 "image_url": profile_pic_url,
                 "twitter_name": twitter_username,
@@ -157,7 +157,7 @@ class BlockActions:
                     twitter_username, profile_pic_url = self.__manage_friend_tech_user(shares_subject)
                     twitter_user_data = self.__manage_twitter_user(twitter_username)
                     if twitter_user_data:
-                        self.__manage_twitter_user_data(fetched_block, shares_subject, twitter_user_data, twitter_username, profile_pic_url, twitter_userdata, notification_data)
+                        self.__manage_twitter_user_data(fetched_block, shares_subject, twitter_user_data, twitter_username, profile_pic_url)
                     else:
                         print("no twitter user data")
                     
