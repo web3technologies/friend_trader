@@ -39,10 +39,12 @@ class BlockActions:
     def __init__(self, task, block_hash=None, block_number=None, send_notifications=False) -> None:
         self.task = task
         self.send_notifications = send_notifications
+        self.block_identifier = block_hash if block_hash else block_number
         self.block = Block.objects.create(block_hash=block_hash, block_number=block_number)
         self.web3 = random.choice(self.web3_providers)
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
-        self.friend_tech_users_created = []
+        self.friend_tech_users_to_create = []
+        self.friend_tech_user_addresses = []
         self.twitter_userdata = []
         self.notification_data =  []
         self.transcations_to_create = []
@@ -106,13 +108,14 @@ class BlockActions:
                 friend_tech_user.save(update_fields=["twitter_username", "twitter_profile_pic"])
         except FriendTechUser.DoesNotExist:
             twitter_username, profile_pic_url = self.__fetch_kossetto_data(shares_subject)
-            if shares_subject not in self.friend_tech_users_created:
+            if shares_subject not in self.friend_tech_user_addresses:
                 friend_tech_user = FriendTechUser(
                         address=shares_subject,
                         twitter_username=twitter_username,
                         twitter_profile_pic=profile_pic_url
                     )
-                self.friend_tech_users_created.append(friend_tech_user)
+                self.friend_tech_users_to_create.append(friend_tech_user)
+                self.friend_tech_user_addresses.append(shares_subject)
             
         return friend_tech_user
     
@@ -146,10 +149,11 @@ class BlockActions:
             print(f"Not enough followers: {twitter_username}")
         
     def __perform_block_actions(self):
-        fetched_block = self.web3.eth.get_block(self.block.block_hash, full_transactions=True)
+        fetched_block = self.web3.eth.get_block(self.block_identifier, full_transactions=True)
         self.block.block_number = fetched_block.number
         self.block.block_timestamp = fetched_block.timestamp
-        self.block.save(update_fields=["block_number", "block_timestamp"])
+        self.block.block_hash = fetched_block.hash
+        self.block.save(update_fields=["block_number", "block_timestamp", "block_hash"])
         print(f"Block # {fetched_block.number}")
         for tx in fetched_block.transactions:
             if tx["to"] == self.contract.address:
@@ -185,6 +189,7 @@ class BlockActions:
                     self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK)
 
     def __handle_post_processing_db_updates(self):
+        FriendTechUser.objects.bulk_create(self.friend_tech_users_to_create)
         if self.transcations_to_create:
             Transaction.objects.bulk_create(self.transcations_to_create)
         if self.share_prices_to_create:
