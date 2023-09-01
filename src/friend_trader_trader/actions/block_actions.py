@@ -36,9 +36,10 @@ class BlockActions:
             Web3(Web3.HTTPProvider(blast_url))
         ]
     
-    def __init__(self, task, block_hash) -> None:
+    def __init__(self, task, block_hash=None, block_number=None, send_notifications=False) -> None:
         self.task = task
-        self.block = Block.objects.create(block_hash=block_hash)
+        self.send_notifications = send_notifications
+        self.block = Block.objects.create(block_hash=block_hash, block_number=block_number)
         self.web3 = random.choice(self.web3_providers)
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
         self.friend_tech_users_created = []
@@ -176,11 +177,12 @@ class BlockActions:
                     pass
     
     def __handle_notifications(self):
-        for notification in self.notification_data:
-            if notification["shares_count"] < 3:
-                self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK_NEW_USER_GREATER_THAN_100K)
-            else:
-                self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK)
+        if self.send_notifications:
+            for notification in self.notification_data:
+                if notification["shares_count"] < 3:
+                    self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK_NEW_USER_GREATER_THAN_100K)
+                else:
+                    self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK)
 
     def __handle_post_processing_db_updates(self):
         if self.transcations_to_create:
