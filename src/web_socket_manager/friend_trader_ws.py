@@ -1,16 +1,32 @@
 import json
 import os
 import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'friend_trader.settings.settings')
+from decouple import config
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', f'friend_trader.settings.{config("ENVIORNMENT")}')
 django.setup()
 from django.conf import settings
 import asyncio
 import websockets
+
+from friend_trader_trader.models import Block
 from friend_trader_dispatcher.tasks import perform_block_actions_task
 
 
 class FriendTraderListener:
     blast_wss = f"wss://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
+    env = config("ENVIRONMENT")
+
+    def sync_blocks(self):
+        if self.env != "dev":
+            blocks = list(Block.objects.order_by("block_number"))
+            i = 0
+            while i < len(blocks):
+                curr_block = blocks[i]
+                curr_block_num = curr_block.block_number
+                next_block = blocks[i+1]
+                if curr_block_num + 1 != next_block.block_number:
+                    ...
+
 
     async def handle_connection(self):
         
@@ -41,6 +57,7 @@ class FriendTraderListener:
 
 if __name__ == "__main__":
     friend_trader = FriendTraderListener()
+    friend_trader.sync_blocks()
     asyncio.get_event_loop().run_until_complete(friend_trader.listen_for_new_blocks())
 
 
