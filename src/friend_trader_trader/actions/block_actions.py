@@ -6,12 +6,10 @@ import requests
 import tweepy
 from tweepy.errors import NotFound as TwitterUserNotFound, TweepyException
 from web3 import Web3
-from celery.exceptions import MaxRetriesExceededError
 
 from django.conf import settings
 from django.utils import timezone
 
-from friend_trader_core.clients import kossetto_client
 from friend_trader_trader.models import Block, FriendTechUser, SharePrice, Transaction
 from friend_trader_trader.exceptions.exceptions import TwitterForbiddenException
 
