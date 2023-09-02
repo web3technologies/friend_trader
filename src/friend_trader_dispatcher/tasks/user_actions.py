@@ -7,13 +7,13 @@ from friend_trader_trader.models import FriendTechUser
 
 @shared_task(
     bind=True, 
-    name="retrieve_users_data", 
+    name="retrieve_users_data_task", 
     base=BaseCeleryTask,
     # autoretry_for=(, ),
     retry_backoff=15,
     max_retries=3
     )
-def retrieve_users_data(self, friend_tech_user_data:list):
+def retrieve_users_data_task(self, friend_tech_user_data:list):
     ## maybe call this recursively??? to handle retry or twitter failures??
     users_to_update = []
     for friend_tech_user in friend_tech_user_data:

@@ -4,7 +4,7 @@ import django
 from decouple import config
 import concurrent.futures
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', f'friend_trader.settings.{config("ENVIORNMENT")}')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', f'friend_trader.settings.{config("ENVIRONMENT")}')
 django.setup()
 from django.conf import settings
 from celery import group 
@@ -18,16 +18,26 @@ from friend_trader_dispatcher.tasks import perform_block_actions_task
 
 class FriendTraderListener:
     blast_wss = f"wss://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
-    env = config("ENVIORNMENT")
+    env = config("ENVIRONMENT")
     blast_url = f"https://base-mainnet.blastapi.io/{settings.BLAST_WSS_API}"
     web3 = Web3(Web3.HTTPProvider(blast_url))
 
     def __init__(self) -> None:
         self.initial = True
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        
+    def run_coroutine_in_thread(self, coroutine):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(coroutine)
+        finally:
+            loop.close()
 
     # should this be async?
     def sync_blocks(self, block_hash):
         if self.env in ("int", "prod"):
+            print("Checking initial Sync")
             initial_block_num = settings.INITIAL_BLOCK
             current_block = self.web3.eth.get_block(block_hash)
             block_number = current_block.number
@@ -75,10 +85,8 @@ class FriendTraderListener:
                 block_hash = json.loads(message).get('params').get('result').get("hash")
                 print(block_hash)
                 if self.initial:
-                    print("Checking initial Sync")
                     loop = asyncio.get_running_loop()
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        loop.run_in_executor(executor, self.sync_blocks, block_hash)
+                    loop.run_in_executor(self.executor, self.sync_blocks, block_hash)
                     self.initial = False
                 else:
                     perform_block_actions_task.delay(block_hash=block_hash, send_notifications=True)
