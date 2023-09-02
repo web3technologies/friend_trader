@@ -41,8 +41,6 @@ class BlockActions:
         self.block = Block.objects.get_or_create(block_number=block_number)[0]
         self.web3 = random.choice(self.web3_providers)
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
-        self.friend_tech_users_to_create = []
-        self.friend_tech_user_addresses = []
         self.twitter_userdata = []
         self.notification_data =  []
         self.transcations_to_create = []
@@ -83,11 +81,8 @@ class BlockActions:
             if not friend_tech_user.twitter_username:
                 friend_tech_user.get_kossetto_data(auto_save=True)
         except FriendTechUser.DoesNotExist:
-            if shares_subject not in self.friend_tech_user_addresses:
-                friend_tech_user = FriendTechUser(address=shares_subject)
-                friend_tech_user.get_kossetto_data(auto_save=False)
-                self.friend_tech_users_to_create.append(friend_tech_user)
-                self.friend_tech_user_addresses.append(shares_subject)
+            friend_tech_user = FriendTechUser.objects.create(address=shares_subject)
+            friend_tech_user.get_kossetto_data(auto_save=True)
             
         return friend_tech_user
     
@@ -160,7 +155,6 @@ class BlockActions:
                     self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK)
 
     def __handle_post_processing_db_updates(self):
-        FriendTechUser.objects.bulk_create(self.friend_tech_users_to_create)
         if self.transcations_to_create:
             Transaction.objects.bulk_create(self.transcations_to_create)
         if self.share_prices_to_create:
