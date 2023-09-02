@@ -14,6 +14,7 @@ from friend_trader_trader.models import FriendTechUser
     max_retries=3
     )
 def retrieve_users_data(self, friend_tech_user_data:list):
+    ## maybe call this recursively??? to handle retry or twitter failures??
     users_to_update = []
     for friend_tech_user in friend_tech_user_data:
         f_user = FriendTechUser.objects.get(address=friend_tech_user.get("address"))
