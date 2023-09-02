@@ -32,15 +32,15 @@ class BlockActions:
         )
     tweepy_client = tweepy.API(twitter_auth)
     web3_providers = [
-            Web3(Web3.HTTPProvider(ankr_url)),
+            # Web3(Web3.HTTPProvider(ankr_url)),
             Web3(Web3.HTTPProvider(blast_url))
         ]
     
-    def __init__(self, task, block_hash=None, block_number=None, send_notifications=False) -> None:
+    def __init__(self, task, block_number=None, send_notifications=False) -> None:
         self.task = task
         self.send_notifications = send_notifications
-        self.block_identifier = block_hash if block_hash else block_number
-        self.block = Block.objects.create(block_hash=block_hash, block_number=block_number)
+        self.block_number =  block_number
+        self.block = Block.objects.get_or_create(block_number=block_number)[0]
         self.web3 = random.choice(self.web3_providers)
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
         self.friend_tech_users_to_create = []
@@ -78,42 +78,16 @@ class BlockActions:
         utc_time = pytz.utc.localize(utc_time)
         central_time = utc_time.astimezone(pytz.timezone('US/Central'))
         return central_time
-    
-    def __fetch_kossetto_data(self, address):
-        twitter_username, profile_pic_url = None, None
-        try:
-            kossetto_data = kossetto_client.get_kossetto_user(address=address)
-            twitter_username = kossetto_data.get("twitterUsername")
-            profile_pic_url = kossetto_data.get("twitterPfpUrl")
-        except requests.Timeout as e:
-            print("timeout")
-            try:
-                self.task.retry(exc=e, countdown=60)
-            except MaxRetriesExceededError:
-                print(f"max retry for address fetch {address}")
-                raise
-        except requests.HTTPError as e:
-            print(f"{address} not found in kossetto")
-        return twitter_username, profile_pic_url
 
     def __manage_friend_tech_user(self, shares_subject):
         try:
             friend_tech_user = FriendTechUser.objects.get(address=shares_subject)
-            twitter_username = friend_tech_user.twitter_username
-            profile_pic_url = friend_tech_user.twitter_profile_pic
-            if not twitter_username:
-                twitter_username, profile_pic_url = self.__fetch_kossetto_data(shares_subject)
-                friend_tech_user.twitter_username = twitter_username
-                friend_tech_user.twitter_profile_pic = profile_pic_url
-                friend_tech_user.save(update_fields=["twitter_username", "twitter_profile_pic"])
+            if not friend_tech_user.twitter_username:
+                friend_tech_user.get_kossetto_data(auto_save=True)
         except FriendTechUser.DoesNotExist:
-            twitter_username, profile_pic_url = self.__fetch_kossetto_data(shares_subject)
             if shares_subject not in self.friend_tech_user_addresses:
-                friend_tech_user = FriendTechUser(
-                        address=shares_subject,
-                        twitter_username=twitter_username,
-                        twitter_profile_pic=profile_pic_url
-                    )
+                friend_tech_user = FriendTechUser(address=shares_subject)
+                friend_tech_user.get_kossetto_data(auto_save=False)
                 self.friend_tech_users_to_create.append(friend_tech_user)
                 self.friend_tech_user_addresses.append(shares_subject)
             
@@ -149,11 +123,10 @@ class BlockActions:
             print(f"Not enough followers: {twitter_username}")
         
     def __perform_block_actions(self):
-        fetched_block = self.web3.eth.get_block(self.block_identifier, full_transactions=True)
-        self.block.block_number = fetched_block.number
+        fetched_block = self.web3.eth.get_block(self.block_number, full_transactions=True)
         self.block.block_timestamp = fetched_block.timestamp
         self.block.block_hash = fetched_block.hash
-        self.block.save(update_fields=["block_number", "block_timestamp", "block_hash"])
+        self.block.save(update_fields=["block_timestamp", "block_hash"])
         print(f"Block # {fetched_block.number}")
         for tx in fetched_block.transactions:
             if tx["to"] == self.contract.address:

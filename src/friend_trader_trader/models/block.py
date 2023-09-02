@@ -6,3 +6,6 @@ class Block(models.Model):
     block_number = models.IntegerField(null=True, default=None)
     block_timestamp = models.BigIntegerField(null=True, default=None)
     date_sniffed = models.DateTimeField(null=True, default=None)
+
+    def __str__(self) -> str:
+        return f"<Block: {self.block_number}>"

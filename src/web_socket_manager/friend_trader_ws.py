@@ -35,15 +35,14 @@ class FriendTraderListener:
             loop.close()
 
     # should this be async?
-    def sync_blocks(self, block_hash):
+    def sync_blocks(self, block_number):
         if self.env in ("int", "prod"):
             print("Checking initial Sync")
             initial_block_num = settings.INITIAL_BLOCK
-            current_block = self.web3.eth.get_block(block_hash)
-            block_number = current_block.number
             blocks_nums_stored = list(
                 Block.objects.filter(block_number__gte=settings.INITIAL_BLOCK, block_number__lte=block_number) \
-                .order_by("block_number")\
+                .exclude(date_sniffed=None) \
+                .order_by("block_number") \
                 .values_list("block_number", flat=True)
             )
             should_have_blocks = [block_num for block_num in range(initial_block_num, block_number+1)]
@@ -82,14 +81,15 @@ class FriendTraderListener:
             message = await ws.recv()
             while True:
                 message = await ws.recv()
-                block_hash = json.loads(message).get('params').get('result').get("hash")
-                print(block_hash)
+                block_num_hex = json.loads(message).get('params').get('result').get("number")
+                block_number = int(block_num_hex, 16)
+                print(block_number)
                 if self.initial:
                     loop = asyncio.get_running_loop()
-                    loop.run_in_executor(self.executor, self.sync_blocks, block_hash)
+                    loop.run_in_executor(self.executor, self.sync_blocks, block_number)
                     self.initial = False
                 else:
-                    perform_block_actions_task.delay(block_hash=block_hash, send_notifications=True)
+                    perform_block_actions_task.delay(block_number=block_number, send_notifications=True)
                 
     async def listen_for_new_blocks(self):
         try:      
