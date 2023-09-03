@@ -82,7 +82,10 @@ class BlockActions:
                 friend_tech_user.get_kossetto_data(auto_save=True)
         except FriendTechUser.DoesNotExist:
             friend_tech_user = FriendTechUser.objects.create(address=shares_subject)
-            friend_tech_user.get_kossetto_data(auto_save=True)
+            try:
+                friend_tech_user.get_kossetto_data(auto_save=True)
+            except requests.exceptions.HTTPError:
+                print("Error fetching data")
         except requests.exceptions.HTTPError:
             print("Error fetching data")
             
@@ -101,11 +104,12 @@ class BlockActions:
                 raise e
             
             
-    def __manage_share_price(self, friend_tech_user) -> SharePrice:
+    def __manage_share_price(self, friend_tech_user: FriendTechUser) -> SharePrice:
         buy_price = self.contract.functions.getBuyPrice(friend_tech_user.address, 1).call(block_identifier=self.block_number)
         buy_price = self.web3.from_wei(buy_price, "ether")
         sell_price = self.contract.functions.getSellPrice(friend_tech_user.address, 1).call(block_identifier=self.block_number)
         sell_price = self.web3.from_wei(sell_price, "ether")
+        friend_tech_user.get_contract_data(self.contract)
         share_price_obj = SharePrice(
               buy_price=buy_price,
               sell_price=sell_price,
