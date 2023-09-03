@@ -12,6 +12,9 @@ class FriendTechUser(models.Model):
     twitter_profile_pic = models.CharField(max_length=255, null=True, default=None)
     twitter_followers = models.IntegerField(null=True, default=None)
     share_count = models.IntegerField(null=True, default=None)
+    
+    def __str__(self) -> str:
+        return self.twitter_username
 
 
     def get_kossetto_data(self, auto_save=True):

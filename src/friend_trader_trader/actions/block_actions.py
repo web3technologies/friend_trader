@@ -37,7 +37,7 @@ class BlockActions:
     def __init__(self, task, block_number=None, send_notifications=False) -> None:
         self.task = task
         self.send_notifications = send_notifications
-        self.block_number =  block_number
+        self.block_number = block_number
         self.block = Block.objects.get_or_create(block_number=block_number)[0]
         self.web3 = random.choice(self.web3_providers)
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
@@ -83,6 +83,8 @@ class BlockActions:
         except FriendTechUser.DoesNotExist:
             friend_tech_user = FriendTechUser.objects.create(address=shares_subject)
             friend_tech_user.get_kossetto_data(auto_save=True)
+        except requests.exceptions.HTTPError:
+            print("Error fetching data")
             
         return friend_tech_user
     
@@ -97,6 +99,21 @@ class BlockActions:
                 raise TwitterForbiddenException("403 forbidden from twitter client")
             else:
                 raise e
+            
+            
+    def __manage_share_price(self, friend_tech_user) -> SharePrice:
+        buy_price = self.contract.functions.getBuyPrice(friend_tech_user.address, 1).call(block_identifier=self.block_number)
+        buy_price = self.web3.from_wei(buy_price, "ether")
+        sell_price = self.contract.functions.getSellPrice(friend_tech_user.address, 1).call(block_identifier=self.block_number)
+        sell_price = self.web3.from_wei(sell_price, "ether")
+        share_price_obj = SharePrice(
+              buy_price=buy_price,
+              sell_price=sell_price,
+              block=self.block,
+              friend_tech_user=friend_tech_user
+            )
+        self.share_prices_to_create.append(share_price_obj)
+        return share_price_obj
             
     def __manage_twitter_user_data(self, block, shares_subject, twitter_user_data, twitter_username, profile_pic_url):
         if twitter_user_data.followers_count >= 100_000:
@@ -128,19 +145,21 @@ class BlockActions:
                     shares_subject = function_input.get('sharesSubject')
                     friend_tech_user = self.__manage_friend_tech_user(shares_subject)
                     twitter_user_data = self.__manage_twitter_user(friend_tech_user.twitter_username)
+                    self.__manage_share_price(friend_tech_user)
                     if twitter_user_data:
                         self.__manage_twitter_user_data(fetched_block, shares_subject, twitter_user_data, friend_tech_user.twitter_username, friend_tech_user.twitter_profile_pic)
                     else:
                         print("no twitter user data")
-                    # self.transcations_to_create.append(
-                    #     Transaction(
-                    #         type="BUY",
-                    #         price=tx["value"],
-                    #         seller=friend_tech_user,
-                    #         buyer=FriendTechUser.objects.get(address=tx["from"]),
-                    #         block=self.block
-                    #     )
-                    # )
+                    self.transcations_to_create.append(
+                        Transaction(
+                            type="BUY",
+                            price=tx["value"],
+                            seller=friend_tech_user,
+                            buyer=FriendTechUser.objects.get_or_create(address=tx["from"])[0],
+                            block=self.block,
+                            transaction_hash=tx.hash.hex()
+                        )
+                    )
                 elif function.function_identifier == "sellShares":
                     pass
                 else:
@@ -158,7 +177,7 @@ class BlockActions:
         if self.transcations_to_create:
             Transaction.objects.bulk_create(self.transcations_to_create)
         if self.share_prices_to_create:
-            SharePrice.objets.bulk_create(self.share_prices_to_create)
+            SharePrice.objects.bulk_create(self.share_prices_to_create)
         self.block.date_sniffed = timezone.now()
         self.block.save(update_fields=["date_sniffed"])
     

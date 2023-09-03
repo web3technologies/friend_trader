@@ -83,7 +83,7 @@ class FriendTraderListener:
                 message = await ws.recv()
                 block_num_hex = json.loads(message).get('params').get('result').get("number")
                 block_number = int(block_num_hex, 16)
-                print(block_number)
+                print(f"Block# {block_number}")
                 if self.initial:
                     loop = asyncio.get_running_loop()
                     loop.run_in_executor(self.executor, self.sync_blocks, block_number)
