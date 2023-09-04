@@ -143,8 +143,8 @@ class BlockActions:
             Transaction(
                 type=function.function_identifier,
                 price=tx["value"],
-                seller=friend_tech_user,
-                buyer=FriendTechUser.objects.get_or_create(address=tx["from"])[0],
+                friend_tech_user=friend_tech_user,
+                tx_from=FriendTechUser.objects.get_or_create(address=tx["from"])[0],
                 block=self.block,
                 transaction_hash=tx.hash.hex()
             )

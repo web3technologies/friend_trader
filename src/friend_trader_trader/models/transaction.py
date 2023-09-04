@@ -9,6 +9,6 @@ class Transaction(models.Model):
     price = models.DecimalField(max_digits=45, decimal_places=20)
     transaction_hash = models.CharField(max_length=100)
 
-    buyer = models.ForeignKey(FriendTechUser, on_delete=models.DO_NOTHING, related_name="buys")
-    seller = models.ForeignKey(FriendTechUser, on_delete=models.DO_NOTHING, related_name="sells")
+    tx_from = models.ForeignKey(FriendTechUser, on_delete=models.DO_NOTHING, related_name="buys")
+    friend_tech_user = models.ForeignKey(FriendTechUser, on_delete=models.DO_NOTHING, related_name="sells")
     block = models.ForeignKey(Block, on_delete=models.DO_NOTHING)
