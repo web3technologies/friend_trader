@@ -91,7 +91,7 @@ class FriendTraderListener:
                     perform_block_actions_task.delay(block_number=block_number, send_notifications=True)
                 
     async def listen_for_new_blocks(self):
-        try:      
+        try:
             await self.handle_connection()
         except (websockets.ConnectionClosed, websockets.ConnectionClosedError):
             print("Connection lost. Reconnecting...")
