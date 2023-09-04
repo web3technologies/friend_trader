@@ -101,8 +101,8 @@ class BlockActions:
     def __manage_share_price(self, friend_tech_user: FriendTechUser) -> SharePrice:
         friend_tech_user, buy_price, sell_price = friend_tech_user.get_contract_data(self.contract, self.block_number)
         share_price_obj = SharePrice(
-              buy_price=self.web3.from_wei(buy_price, "ether"),
-              sell_price=self.web3.from_wei(sell_price, "ether"),
+              buy_price=self.web3.from_wei(buy_price, "ether") if buy_price else None,
+              sell_price=self.web3.from_wei(sell_price, "ether") if sell_price else None,
               block=self.block,
               friend_tech_user=friend_tech_user
             )
