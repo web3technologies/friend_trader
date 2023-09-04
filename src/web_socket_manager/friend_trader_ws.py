@@ -36,37 +36,36 @@ class FriendTraderListener:
 
     # should this be async?
     def sync_blocks(self, block_number):
-        if self.env in ("int", "prod"):
-            print("Checking initial Sync")
-            initial_block_num = settings.INITIAL_BLOCK
-            blocks_nums_stored = list(
-                Block.objects.filter(block_number__gte=settings.INITIAL_BLOCK, block_number__lte=block_number) \
-                .exclude(date_sniffed=None) \
-                .order_by("block_number") \
-                .values_list("block_number", flat=True)
-            )
-            should_have_blocks = [block_num for block_num in range(initial_block_num, block_number+1)]
-            missing_blocks = []
+        print("Checking initial Sync")
+        initial_block_num = settings.INITIAL_BLOCK
+        blocks_nums_stored = list(
+            Block.objects.filter(block_number__gte=settings.INITIAL_BLOCK, block_number__lte=block_number) \
+            .exclude(date_sniffed=None) \
+            .order_by("block_number") \
+            .values_list("block_number", flat=True)
+        )
+        should_have_blocks = [block_num for block_num in range(initial_block_num, block_number+1)]
+        missing_blocks = []
 
-            for block_num in should_have_blocks:
-                if block_num not in blocks_nums_stored:
-                    missing_blocks.append(block_num)
-            if missing_blocks:
-                print(f"Syncing blocks -- missing: {len(missing_blocks)}")
-                block_actions_to_perform = []
-                batch_count = 0
-                for block_num in missing_blocks:
-                    block_actions_to_perform.append(
-                        perform_block_actions_task.s(block_number=block_num)
-                    )
-                    batch_count += 1
-                    if batch_count == 250:
-                        perform_many_block_actions = group(block_actions_to_perform)
-                        perform_many_block_actions.apply_async()
-                        block_actions_to_perform = []
-                        batch_count = 0
-            else:
-                print(f"All blocks are synced and up to date")
+        for block_num in should_have_blocks:
+            if block_num not in blocks_nums_stored:
+                missing_blocks.append(block_num)
+        if missing_blocks:
+            print(f"Syncing blocks -- missing: {len(missing_blocks)}")
+            block_actions_to_perform = []
+            batch_count = 0
+            for block_num in missing_blocks:
+                block_actions_to_perform.append(
+                    perform_block_actions_task.s(block_number=block_num)
+                )
+                batch_count += 1
+                if batch_count == 250:
+                    perform_many_block_actions = group(block_actions_to_perform)
+                    perform_many_block_actions.apply_async()
+                    block_actions_to_perform = []
+                    batch_count = 0
+        else:
+            print(f"All blocks are synced and up to date")
 
     async def handle_connection(self):
         
@@ -84,7 +83,7 @@ class FriendTraderListener:
                 block_num_hex = json.loads(message).get('params').get('result').get("number")
                 block_number = int(block_num_hex, 16)
                 print(f"Block# {block_number}")
-                if self.initial:
+                if self.initial and self.env in ("int", "prod"):
                     loop = asyncio.get_running_loop()
                     loop.run_in_executor(self.executor, self.sync_blocks, block_number)
                     self.initial = False
