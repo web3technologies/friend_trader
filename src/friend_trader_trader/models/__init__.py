@@ -1,4 +1,3 @@
 from friend_trader_trader.models.friend_tech_user import FriendTechUser
 from friend_trader_trader.models.block import Block
-from friend_trader_trader.models.transaction import Transaction
-from friend_trader_trader.models.share_price import SharePrice
+from friend_trader_trader.models.trade import Trade

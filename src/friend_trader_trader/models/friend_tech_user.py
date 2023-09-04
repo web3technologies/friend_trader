@@ -15,7 +15,7 @@ class FriendTechUser(models.Model):
     last_online = models.BigIntegerField(null=True, default=None)
     
     def __str__(self) -> str:
-        return self.twitter_username
+        return f"{self.twitter_username}"
 
 
     def get_kossetto_data(self, auto_save=True):
@@ -32,16 +32,4 @@ class FriendTechUser(models.Model):
             return self
         except Timeout as e:
             print("handle timeout logic")
-            
-    def get_contract_data(self, contract, block_number, auto_save=True):
-        shares_supply = contract.functions.sharesSupply(self.address).call()
-        self.shares_supply = shares_supply
-        buy_price = contract.functions.getBuyPrice(self.address, 1).call(block_identifier=block_number)
-        if shares_supply > 0:
-            sell_price = contract.functions.getSellPrice(self.address, 1).call(block_identifier=block_number)
-        else:
-            sell_price = None
-        if auto_save:
-            self.save(update_fields=["shares_supply"])
-        return self, buy_price, sell_price
         
