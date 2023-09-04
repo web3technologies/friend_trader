@@ -99,13 +99,14 @@ class BlockActions:
             
         return friend_tech_user
             
-    def __manage_share_price(self, friend_tech_user: FriendTechUser) -> SharePrice:
+    def __manage_share_price(self, friend_tech_user: FriendTechUser, trans: Transaction) -> SharePrice:
         friend_tech_user, buy_price, sell_price = friend_tech_user.get_contract_data(self.contract, self.block_number)
         share_price_obj = SharePrice(
               buy_price=self.web3.from_wei(buy_price, "ether") if buy_price else None,
               sell_price=self.web3.from_wei(sell_price, "ether") if sell_price else None,
               block=self.block,
-              friend_tech_user=friend_tech_user
+              friend_tech_user=friend_tech_user,
+              transaction=trans
             )
         self.share_prices_to_create.append(share_price_obj)
         return friend_tech_user
@@ -137,11 +138,9 @@ class BlockActions:
         
     def __buy_or_sell_shares(self, function, function_input, tx):
         shares_subject = function_input.get('sharesSubject')
+        
         friend_tech_user = self.__manage_friend_tech_user(shares_subject)
-        friend_tech_user = self.__manage_share_price(friend_tech_user)
-        self.__manage_twitter_user_data(friend_tech_user)
-        self.transcations_to_create.append(
-            Transaction(
+        trans = Transaction(
                 type=function.function_identifier,
                 price=tx["value"],
                 friend_tech_user=friend_tech_user,
@@ -149,7 +148,9 @@ class BlockActions:
                 block=self.block,
                 transaction_hash=tx.hash.hex()
             )
-        )
+        friend_tech_user = self.__manage_share_price(friend_tech_user, trans)
+        self.__manage_twitter_user_data(friend_tech_user)
+        self.transcations_to_create.append(trans)
         
     def __perform_block_actions(self):
         fetched_block = self.web3.eth.get_block(self.block_number, full_transactions=True)
