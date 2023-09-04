@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "django_celery_results",
     "django_extensions",
+    "rest_framework",
     "friend_trader_auth",
     "friend_trader_dispatcher",
     "friend_trader_trader",
