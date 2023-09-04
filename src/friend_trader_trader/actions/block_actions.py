@@ -7,6 +7,7 @@ import tweepy
 from tweepy.errors import NotFound as TwitterUserNotFound, TweepyException
 from web3 import Web3
 
+from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
 
@@ -171,12 +172,13 @@ class BlockActions:
                     self.__send_discord_messages(notification, settings.DISCORD_WEBHOOK)
 
     def __handle_post_processing_db_updates(self):
-        if self.transcations_to_create:
-            Transaction.objects.bulk_create(self.transcations_to_create)
-        if self.share_prices_to_create:
-            SharePrice.objects.bulk_create(self.share_prices_to_create)
-        self.block.date_sniffed = timezone.now()
-        self.block.save(update_fields=["date_sniffed"])
+        with transaction.atomic():
+            if self.transcations_to_create:
+                Transaction.objects.bulk_create(self.transcations_to_create)
+            if self.share_prices_to_create:
+                SharePrice.objects.bulk_create(self.share_prices_to_create)
+            self.block.date_sniffed = timezone.now()
+            self.block.save(update_fields=["date_sniffed"])
     
     def run(self):
         self.__perform_block_actions()
