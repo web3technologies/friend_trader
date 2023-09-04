@@ -45,6 +45,13 @@ class BlockActions:
         self.notification_data =  []
         self.transcations_to_create = []
         self.share_prices_to_create = []
+        
+    @property
+    def function_handler(self):
+        return {
+            "buyShares": self.__buy_or_sell_shares,
+            "sellShares": self.__buy_or_sell_shares
+        }
 
         
     def __send_discord_messages(self, notification, webhook_url):
@@ -90,51 +97,58 @@ class BlockActions:
             print("Error fetching data")
             
         return friend_tech_user
-    
-    def __manage_twitter_user(self, twitter_username):
+            
+    def __manage_share_price(self, friend_tech_user: FriendTechUser) -> SharePrice:
+        friend_tech_user, buy_price, sell_price = friend_tech_user.get_contract_data(self.contract, self.block_number)
+        share_price_obj = SharePrice(
+              buy_price=self.web3.from_wei(buy_price, "ether"),
+              sell_price=self.web3.from_wei(sell_price, "ether"),
+              block=self.block,
+              friend_tech_user=friend_tech_user
+            )
+        self.share_prices_to_create.append(share_price_obj)
+        return friend_tech_user
+            
+    def __manage_twitter_user_data(self, friend_tech_user):
         try:
-            twitter_user_data = self.tweepy_client.get_user(screen_name=twitter_username)
-            return twitter_user_data
+            twitter_user_data = self.tweepy_client.get_user(screen_name=friend_tech_user.twitter_username)
+            if twitter_user_data.followers_count >= 100_000:
+                buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(friend_tech_user.address,1).call(), "ether")
+                msg = f"TwitterName: {friend_tech_user.twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: Ξ{buy_price_after_fee}, Total Shares: {friend_tech_user.shares_supply}"
+                msg += f", Time: {self.__convert_to_central_time(self.block.block_timestamp)}"
+                print(msg)
+                self.twitter_userdata.append(msg)
+                self.notification_data.append({
+                    "msg": msg,
+                    "image_url": friend_tech_user.twitter_profile_pic,
+                    "twitter_name": friend_tech_user.twitter_username,
+                    "shares_count": friend_tech_user.shares_supply
+                })
+            else:
+                print(f"Not enough followers: {friend_tech_user.twitter_username}")
         except TwitterUserNotFound as e:
-            print(f"{twitter_username} not found")
+            print(f"{friend_tech_user.twitter_username} not found")
         except TweepyException as e:
             if 63 in e.api_codes:
                 raise TwitterForbiddenException("403 forbidden from twitter client")
             else:
                 raise e
-            
-            
-    def __manage_share_price(self, friend_tech_user: FriendTechUser) -> SharePrice:
-        buy_price = self.contract.functions.getBuyPrice(friend_tech_user.address, 1).call(block_identifier=self.block_number)
-        buy_price = self.web3.from_wei(buy_price, "ether")
-        sell_price = self.contract.functions.getSellPrice(friend_tech_user.address, 1).call(block_identifier=self.block_number)
-        sell_price = self.web3.from_wei(sell_price, "ether")
-        friend_tech_user.get_contract_data(self.contract)
-        share_price_obj = SharePrice(
-              buy_price=buy_price,
-              sell_price=sell_price,
-              block=self.block,
-              friend_tech_user=friend_tech_user
+        
+    def __buy_or_sell_shares(self, function, function_input, tx):
+        shares_subject = function_input.get('sharesSubject')
+        friend_tech_user = self.__manage_friend_tech_user(shares_subject)
+        friend_tech_user = self.__manage_share_price(friend_tech_user)
+        self.__manage_twitter_user_data(friend_tech_user)
+        self.transcations_to_create.append(
+            Transaction(
+                type=function.function_identifier,
+                price=tx["value"],
+                seller=friend_tech_user,
+                buyer=FriendTechUser.objects.get_or_create(address=tx["from"])[0],
+                block=self.block,
+                transaction_hash=tx.hash.hex()
             )
-        self.share_prices_to_create.append(share_price_obj)
-        return share_price_obj
-            
-    def __manage_twitter_user_data(self, block, shares_subject, twitter_user_data, twitter_username, profile_pic_url):
-        if twitter_user_data.followers_count >= 100_000:
-            buy_price_after_fee = self.web3.from_wei(self.contract.functions.getBuyPriceAfterFee(shares_subject,1).call(), "ether")
-            shares_count = self.contract.functions.sharesSupply(shares_subject).call()
-            msg = f"TwitterName: {twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Buy Price: Ξ{buy_price_after_fee}, Total Shares: {shares_count}"
-            msg += f", Time: {self.__convert_to_central_time(block.timestamp)}"
-            print(msg)
-            self.twitter_userdata.append(msg)
-            self.notification_data.append({
-                "msg": msg,
-                "image_url": profile_pic_url,
-                "twitter_name": twitter_username,
-                "shares_count": shares_count
-            })
-        else:
-            print(f"Not enough followers: {twitter_username}")
+        )
         
     def __perform_block_actions(self):
         fetched_block = self.web3.eth.get_block(self.block_number, full_transactions=True)
@@ -145,29 +159,8 @@ class BlockActions:
         for tx in fetched_block.transactions:
             if tx["to"] == self.contract.address:
                 function, function_input = self.contract.decode_function_input(tx.input)
-                if function.function_identifier == "buyShares":
-                    shares_subject = function_input.get('sharesSubject')
-                    friend_tech_user = self.__manage_friend_tech_user(shares_subject)
-                    twitter_user_data = self.__manage_twitter_user(friend_tech_user.twitter_username)
-                    self.__manage_share_price(friend_tech_user)
-                    if twitter_user_data:
-                        self.__manage_twitter_user_data(fetched_block, shares_subject, twitter_user_data, friend_tech_user.twitter_username, friend_tech_user.twitter_profile_pic)
-                    else:
-                        print("no twitter user data")
-                    self.transcations_to_create.append(
-                        Transaction(
-                            type="BUY",
-                            price=tx["value"],
-                            seller=friend_tech_user,
-                            buyer=FriendTechUser.objects.get_or_create(address=tx["from"])[0],
-                            block=self.block,
-                            transaction_hash=tx.hash.hex()
-                        )
-                    )
-                elif function.function_identifier == "sellShares":
-                    pass
-                else:
-                    pass
+                if function.function_identifier in self.function_handler:
+                    self.function_handler[function.function_identifier](function, function_input, tx)
     
     def __handle_notifications(self):
         if self.send_notifications:

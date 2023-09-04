@@ -5,7 +5,7 @@ from friend_trader_trader.models import Block, FriendTechUser
 
 class Transaction(models.Model):
     
-    type = models.CharField(choices=(("BUY", "BUY"), ("SELL", "SELL")), max_length=20)
+    type = models.CharField(choices=(("buyShares", "BUY"), ("sellShares", "SELL")), max_length=20)
     price = models.DecimalField(max_digits=45, decimal_places=20)
     transaction_hash = models.CharField(max_length=100)
 
