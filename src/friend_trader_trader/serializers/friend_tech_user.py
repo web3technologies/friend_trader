@@ -1,6 +1,6 @@
 import datetime
 import pytz
-
+import time as Time
 from rest_framework import serializers
 
 from friend_trader_trader.models import FriendTechUser
@@ -40,46 +40,56 @@ class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
         if not data:
             return []
 
-        # Initialize the first bucket
         start_time = data[0]['block__block_timestamp']
         end_time = start_time + interval
 
         candlesticks = []
+        last_known_price = data[0]['price']
         current_candle = {
-            'Open': data[0]['price'],
-            'Close': data[0]['price'],
-            'High': data[0]['price'],
-            'Low': data[0]['price'],
+            'Open': last_known_price,
+            'Close': last_known_price,
+            'High': last_known_price,
+            'Low': last_known_price,
             'Start_Time': self.__convert_to_central_time(start_time),
             'End_Time': self.__convert_to_central_time(end_time)
         }
 
         for entry in data:
-            time, price = entry['block__block_timestamp'], entry['price']
+            time_stamp, price = entry['block__block_timestamp'], entry['price']
 
-            # Check if the time is within the current interval
-            if start_time <= time < end_time:
-                current_candle['Close'] = price
-                current_candle['High'] = max(current_candle['High'], price)
-                current_candle['Low'] = min(current_candle['Low'], price)
-            else:
-                # Append the completed candlestick to the results
+            while time_stamp >= end_time:
                 candlesticks.append(current_candle)
 
-                # Start a new candlestick interval
-                start_time = time
+                start_time = end_time
                 end_time = start_time + interval
                 current_candle = {
-                    'Open': price,
-                    'Close': price,
-                    'High': price,
-                    'Low': price,
+                    'Open': last_known_price,
+                    'Close': last_known_price,
+                    'High': last_known_price,
+                    'Low': last_known_price,
                     'Start_Time': self.__convert_to_central_time(start_time),
                     'End_Time': self.__convert_to_central_time(end_time)
                 }
 
-        # Add the last interval if it hasn't been added
-        if current_candle not in candlesticks:
+            current_candle['Close'] = price
+            current_candle['High'] = max(current_candle['High'], price)
+            current_candle['Low'] = min(current_candle['Low'], price)
+            last_known_price = price
+
+        candlesticks.append(current_candle)
+
+        current_unix_time = int(Time.time())
+        while end_time <= current_unix_time:
+            start_time = end_time
+            end_time = start_time + interval
+            current_candle = {
+                'Open': last_known_price,
+                'Close': last_known_price,
+                'High': last_known_price,
+                'Low': last_known_price,
+                'Start_Time': self.__convert_to_central_time(start_time),
+                'End_Time': self.__convert_to_central_time(end_time)
+            }
             candlesticks.append(current_candle)
 
         return candlesticks
