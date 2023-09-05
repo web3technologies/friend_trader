@@ -17,6 +17,8 @@ class FriendTechUserSerializer(serializers.ModelSerializer):
 class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
     
     candle_stick_data = serializers.SerializerMethodField("generate_candlestick")
+    first_trade = serializers.SerializerMethodField("get_first_trade")
+    last_trade = serializers.SerializerMethodField("get_last_trade")
     
     def __convert_to_central_time(self, eth_timestamp):
         utc_time = datetime.datetime.utcfromtimestamp(eth_timestamp)
@@ -25,9 +27,15 @@ class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
         formatted_time = central_time.strftime('%Y-%m-%d %I:%M:%S %p')
         return formatted_time
     
+    def get_first_trade(self, obj):
+        return self.__convert_to_central_time(obj.share_prices.order_by("block__block_timestamp").first().block.block_timestamp)
+    
+    def get_last_trade(self, obj):
+        return self.__convert_to_central_time(obj.share_prices.order_by("block__block_timestamp").last().block.block_timestamp)
+    
     def generate_candlestick(self, obj, *args, **kwargs):
         interval = int(self.context.get('interval'))
-        data = obj.share_prices.all().order_by("block__block_timestamp").values("price", "block__block_timestamp")
+        data = obj.share_prices.select_related("block").all().order_by("block__block_timestamp").values("price", "block__block_timestamp")
         
         if not data:
             return []
