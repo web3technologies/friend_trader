@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "django_celery_results",
     "django_extensions",
+    'corsheaders',
     "rest_framework",
     "friend_trader_auth",
     "friend_trader_dispatcher",
@@ -27,11 +28,13 @@ INSTALLED_APPS = [
     "web_socket_manager"
 ]
 AUTH_USER_MODEL = 'friend_trader_auth.User'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
