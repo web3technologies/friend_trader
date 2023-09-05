@@ -1,1 +1,1 @@
-from .friend_tech_user import FriendTechUserSerializer
+from .friend_tech_user import FriendTechUserSerializer, FriendTechUserCandleStickSerializer
