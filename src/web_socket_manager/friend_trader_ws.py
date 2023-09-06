@@ -93,7 +93,7 @@ class FriendTraderListener:
     async def listen_for_new_blocks(self):
         try:
             await self.handle_connection()
-        except (websockets.ConnectionClosed, websockets.ConnectionClosedError):
+        except (websockets.ConnectionClosed, websockets.ConnectionClosedError, asyncio.exceptions.TimeoutError):
             print("Connection lost. Reconnecting...")
             await self.handle_connection()
         except Exception as e:

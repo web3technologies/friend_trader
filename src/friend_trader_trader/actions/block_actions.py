@@ -108,7 +108,7 @@ class BlockActions:
             else:
                 raise e
         
-    def __buy_or_sell_shares(self, trade_events):
+    def __buy_or_sell_shares(self, trade_events, tx_hash):
         for event in trade_events:
             trader = event["args"]["trader"]
             subject = event['args']['subject']
@@ -140,7 +140,8 @@ class BlockActions:
                 protocol_fee=protocol_fee,
                 subject_fee=subject_fee,
                 supply=supply,
-                block=self.block
+                block=self.block,
+                hash=tx_hash.hex()
             )
             self.trades_to_create.append(trade)
             
@@ -165,7 +166,7 @@ class BlockActions:
                 function, function_input = self.contract.decode_function_input(tx.input)
                 if function.function_identifier in self.function_handler:
                     trade_events = self.contract.events.Trade().process_receipt(self.web3.eth.get_transaction_receipt(tx.hash))
-                    self.function_handler[function.function_identifier](trade_events)
+                    self.function_handler[function.function_identifier](trade_events, tx.hash)
                     
     def __handle_notifications(self):
         if self.send_notifications:

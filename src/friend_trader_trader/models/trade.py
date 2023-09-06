@@ -14,5 +14,5 @@ class Trade(models.Model):
     subject_fee = models.DecimalField(max_digits=45, decimal_places=20, null=True, default=None)
     supply = models.IntegerField()
     
-    hash = models.CharField(max_length=100)
+    hash = models.CharField(max_length=100, unique=True) # handle unique case so duplicate trades are not stored
     block = models.ForeignKey(Block, on_delete=models.DO_NOTHING)
