@@ -9,7 +9,9 @@ django.setup()
 from django.conf import settings
 from celery import group 
 import asyncio
+from asyncio.exceptions import TimeoutError, IncompleteReadError
 import websockets
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 from web3 import Web3
 
 from friend_trader_trader.models import Block
@@ -93,7 +95,7 @@ class FriendTraderListener:
     async def listen_for_new_blocks(self):
         try:
             await self.handle_connection()
-        except (websockets.ConnectionClosed, websockets.ConnectionClosedError, asyncio.exceptions.TimeoutError):
+        except (ConnectionClosed, ConnectionClosedError, TimeoutError, IncompleteReadError):
             print("Connection lost. Reconnecting...")
             await self.handle_connection()
         except Exception as e:
