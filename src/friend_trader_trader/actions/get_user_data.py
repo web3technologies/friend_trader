@@ -32,7 +32,7 @@ class GetUserData:
                 friend_tech_user.save()
                 if twitter_user_data.followers_count >= 100_000:
                     share_price = friend_tech_user.share_prices.all().order_by("block__block_number").last()
-                    msg = f"TwitterName: {friend_tech_user.twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Last Price: Ξ{share_price.price if share_price else ''}, Total Shares: {friend_tech_user.shares_supply}"
+                    msg = f"TwitterName: {friend_tech_user.twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Last Price: Ξ{str(share_price.price.normalize()) if share_price else ''}, Total Shares: {friend_tech_user.shares_supply}"
                     print(msg)
                     self.twitter_userdata.append(msg)
                     self.notification_data.append({
