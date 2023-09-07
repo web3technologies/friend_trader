@@ -15,7 +15,7 @@ from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 from web3 import Web3
 
 from friend_trader_trader.models import Block
-from friend_trader_dispatcher.tasks import perform_block_actions_task
+from friend_trader_dispatcher.tasks import perform_block_actions_task, chained_block_actions_task
 
 
 class FriendTraderListener:
@@ -90,16 +90,20 @@ class FriendTraderListener:
                     loop.run_in_executor(self.executor, self.sync_blocks, block_number)
                     self.initial = False
                 else:
-                    perform_block_actions_task.delay(block_number=block_number, send_notifications=True)
+                    chained_block_actions_task.delay(block_number=block_number)
                 
     async def listen_for_new_blocks(self):
-        try:
-            await self.handle_connection()
-        except (ConnectionClosed, ConnectionClosedError, TimeoutError, IncompleteReadError):
-            print("Connection lost. Reconnecting...")
-            await self.handle_connection()
-        except Exception as e:
-            print(f"Error: {e}")
+        while True:
+            try:
+                await self.handle_connection()
+            except (ConnectionClosed, ConnectionClosedError, TimeoutError, IncompleteReadError):
+                print("Connection lost. Reconnecting in 5 seconds...")
+                self.initial = True
+                await asyncio.sleep(5)  # wait for 5 seconds before retrying
+            except Exception as e:
+                self.initial = True
+                print(f"Error: {e}")
+                await asyncio.sleep(5) 
         
 
 if __name__ == "__main__":

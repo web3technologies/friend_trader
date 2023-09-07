@@ -12,5 +12,5 @@ from web3.exceptions import BlockNotFound
     retry_backoff=15,
     max_retries=3
     )
-def perform_block_actions_task(self, block_number=None, send_notifications=False):
-    return BlockActions(task=self, block_number=block_number, send_notifications=send_notifications).run()
+def perform_block_actions_task(self, block_number=None):
+    return BlockActions(task=self, block_number=block_number).run()
