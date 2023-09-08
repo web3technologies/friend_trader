@@ -83,7 +83,7 @@ class BlockActions:
     def __perform_block_actions(self):
         fetched_block = self.web3.eth.get_block(self.block_number, full_transactions=True)
         self.block.block_timestamp = fetched_block.timestamp
-        self.block.block_hash = fetched_block.hash
+        self.block.block_hash = fetched_block.hash.hex()
         self.block.save(update_fields=["block_timestamp", "block_hash"])
         print(f"Block # {fetched_block.number}")
         for tx in fetched_block.transactions:

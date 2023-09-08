@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.db.utils import DatabaseError
 from friend_trader_core.clients import kossetto_client
 from requests import Timeout
 
@@ -22,14 +22,15 @@ class FriendTechUser(models.Model):
         try:
             kossetto_data = kossetto_client.get_kossetto_user(address=self.address)
             twitter_username = kossetto_data.get("twitterUsername")
-            profile_pic_url = kossetto_data.get("twitterPfpUrl")
             last_online = kossetto_data.get("lastOnline")
             self.twitter_username=twitter_username
-            self.twitter_profile_pic=profile_pic_url
             self.last_online = last_online
             if auto_save:
-                self.save(update_fields=["twitter_username", "twitter_profile_pic", "last_online"])
+                self.save(update_fields=["twitter_username", "last_online"])
             return self
         except Timeout as e:
             print("handle timeout logic")
+        except DatabaseError as e:
+            print(self.address, self.twitter_username, self.twitter_profile_pic, self.last_online)
+            raise(e)
         

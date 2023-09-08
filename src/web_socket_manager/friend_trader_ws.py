@@ -2,20 +2,17 @@ import json
 import os
 import django
 from decouple import config
-import concurrent.futures
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', f'friend_trader.settings.{config("ENVIRONMENT")}')
 django.setup()
 from django.conf import settings
-from celery import group 
 import asyncio
 from asyncio.exceptions import TimeoutError, IncompleteReadError
 import websockets
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 from web3 import Web3
 
-from friend_trader_trader.models import Block
-from friend_trader_dispatcher.tasks import perform_block_actions_task, chained_block_actions_task
+from friend_trader_dispatcher.tasks import chained_block_actions_task, sync_blocks_task
 
 
 class FriendTraderListener:
@@ -26,48 +23,6 @@ class FriendTraderListener:
 
     def __init__(self) -> None:
         self.initial = True
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        
-    def run_coroutine_in_thread(self, coroutine):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(coroutine)
-        finally:
-            loop.close()
-
-    # should this be async?
-    def sync_blocks(self, block_number):
-        print("Checking initial Sync")
-        initial_block_num = settings.INITIAL_BLOCK
-        blocks_nums_stored = list(
-            Block.objects.filter(block_number__gte=settings.INITIAL_BLOCK, block_number__lte=block_number) \
-            .exclude(date_sniffed=None) \
-            .order_by("block_number") \
-            .values_list("block_number", flat=True)
-        )
-        should_have_blocks = [block_num for block_num in range(initial_block_num, block_number+1)]
-        missing_blocks = []
-
-        for block_num in should_have_blocks:
-            if block_num not in blocks_nums_stored:
-                missing_blocks.append(block_num)
-        if missing_blocks:
-            print(f"Syncing blocks -- missing: {len(missing_blocks)}")
-            block_actions_to_perform = []
-            batch_count = 0
-            for block_num in missing_blocks:
-                block_actions_to_perform.append(
-                    perform_block_actions_task.s(block_number=block_num)
-                )
-                batch_count += 1
-                if batch_count == 250:
-                    perform_many_block_actions = group(block_actions_to_perform)
-                    perform_many_block_actions.apply_async()
-                    block_actions_to_perform = []
-                    batch_count = 0
-        else:
-            print(f"All blocks are synced and up to date")
 
     async def handle_connection(self):
         
@@ -86,8 +41,8 @@ class FriendTraderListener:
                 block_number = int(block_num_hex, 16)
                 print(f"Block# {block_number}")
                 if self.initial and self.env in ("int", "prod"):
-                    loop = asyncio.get_running_loop()
-                    loop.run_in_executor(self.executor, self.sync_blocks, block_number)
+                    print("performing initial sync")
+                    sync_blocks_task.delay(block_number=block_number)
                     self.initial = False
                 else:
                     chained_block_actions_task.delay(block_number=block_number)

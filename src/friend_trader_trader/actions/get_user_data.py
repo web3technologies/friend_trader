@@ -29,7 +29,8 @@ class GetUserData:
             twitter_user_data = self.tweepy_client.get_user(screen_name=friend_tech_user.twitter_username)
             if twitter_user_data:
                 friend_tech_user.twitter_followers = twitter_user_data.followers_count
-                friend_tech_user.save()
+                friend_tech_user.twitter_profile_pic = twitter_user_data.profile_image_url_https
+                friend_tech_user.save(update_fields=["twitter_followers", "twitter_profile_pic"])
                 if twitter_user_data.followers_count >= 100_000:
                     share_price = friend_tech_user.share_prices.all().order_by("block__block_number").last()
                     msg = f"TwitterName: {friend_tech_user.twitter_username}, Followers: {twitter_user_data.followers_count}, Following: {twitter_user_data.friends_count}, Last Price: Ξ{str(share_price.price.normalize()) if share_price else ''}, Total Shares: {friend_tech_user.shares_supply}"
