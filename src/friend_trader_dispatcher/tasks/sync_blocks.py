@@ -13,18 +13,16 @@ from friend_trader_dispatcher.tasks.perform_block_actions import  perform_block_
 def sync_blocks_task(block_number=None):
     print("Syncing Blocks")
     initial_block_num = settings.INITIAL_BLOCK
-    blocks_nums_stored = list(
-        Block.objects.filter(block_number__gte=settings.INITIAL_BLOCK, block_number__lte=block_number) \
-        .exclude(date_sniffed=None) \
-        .order_by("block_number") \
+    blocks_nums_stored = set(
+        Block.objects.filter(block_number__gte=settings.INITIAL_BLOCK, block_number__lte=block_number)
+        .exclude(date_sniffed=None)
+        .order_by("block_number")
         .values_list("block_number", flat=True)
     )
-    should_have_blocks = [block_num for block_num in range(initial_block_num, block_number+1)]
-    missing_blocks = []
 
-    for block_num in should_have_blocks:
-        if block_num not in blocks_nums_stored:
-            missing_blocks.append(block_num)
+    should_have_blocks = set(range(initial_block_num, block_number + 1))
+
+    missing_blocks = list(should_have_blocks - blocks_nums_stored)
     if missing_blocks:
         print(f"Syncing blocks -- missing: {len(missing_blocks)}")
         block_actions_to_perform = []
