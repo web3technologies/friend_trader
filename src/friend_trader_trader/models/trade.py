@@ -15,4 +15,4 @@ class Trade(models.Model):
     supply = models.IntegerField()
     
     hash = models.CharField(max_length=100, unique=True) # handle unique case so duplicate trades are not stored
-    block = models.ForeignKey(Block, on_delete=models.DO_NOTHING)
+    block = models.ForeignKey(Block, on_delete=models.CASCADE)

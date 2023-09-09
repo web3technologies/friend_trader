@@ -40,18 +40,22 @@ class BlockActions:
             "sellShares": self.__buy_or_sell_shares
         }
         
-    def __individual_share_prices(self, post_transaction_supply, amount):
+    def __individual_share_prices(self, post_transaction_supply, amount, is_buy):
         def get_price(supply, amount):
             sum1 = 0 if supply == 0 else (supply - 1) * supply * (2 * (supply - 1) + 1) // 6
             sum2 = 0 if supply == 0 and amount == 1 else (supply - 1 + amount) * (supply + amount) * (2 * (supply - 1 + amount) + 1) // 6
             summation = sum2 - sum1
             return summation * 1e18 // 16000  # Assuming 1e18 represents 1 ether
 
-        supply = post_transaction_supply - amount
-        
+        if is_buy:
+            supply = post_transaction_supply - amount
+        else:
+            supply = post_transaction_supply + amount
+         
         prices = []
         for i in range(1, amount + 1):
-            prices.append(get_price(supply, i) - get_price(supply, i-1))
+            price = self.web3.from_wei(get_price(supply, i) - get_price(supply, i-1), "ether")
+            prices.append(price)
             supply += 1
 
         return prices
@@ -62,6 +66,11 @@ class BlockActions:
             subject = event['args']['subject']
             is_buy = event['args']['isBuy']
             purchase_amount = event['args']['shareAmount']
+            
+            # this means a call was made to the contract but a purchase was not made
+            if purchase_amount == 0:
+                continue
+            
             # price that was calculated by the contract
             share_price = self.web3.from_wei(event["args"]["ethAmount"], "ether")
             protocol_fee = self.web3.from_wei(event["args"]["protocolEthAmount"], "ether")
@@ -78,7 +87,7 @@ class BlockActions:
                 friend_tech_user = self.shares_subject_cache[subject]
                 
             if purchase_amount > 1:
-                prices = self.__individual_share_prices(post_transaction_supply, purchase_amount)
+                prices = self.__individual_share_prices(post_transaction_supply, purchase_amount, is_buy)
             else:
                 prices = [share_price]
             
@@ -99,8 +108,9 @@ class BlockActions:
                 )
             if created:
                 prices_to_create = [Price(trade=trade, price=price) for price in prices]
-                self.prices_to_create.extend(prices_to_create) 
-            self.user_data.append(friend_tech_user.id)
+                self.prices_to_create.extend(prices_to_create)
+            if friend_tech_user.id not in self.user_data:
+                self.user_data.append(friend_tech_user.id)
         
         
     def __perform_block_actions(self):
