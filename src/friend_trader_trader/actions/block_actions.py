@@ -6,8 +6,7 @@ from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
 
-from friend_trader_trader.models import Block, FriendTechUser,  Trade
-
+from friend_trader_trader.models import Block, FriendTechUser, Trade, Price
 
 
 class BlockActions:
@@ -30,9 +29,9 @@ class BlockActions:
         self.block = Block.objects.get_or_create(block_number=block_number)[0]
         self.web3 = random.choice(self.web3_providers)
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
-        self.trades_to_create = []
         self.shares_subject_cache = {}
         self.user_data = []
+        self.prices_to_create = []
         
     @property
     def function_handler(self):
@@ -40,18 +39,34 @@ class BlockActions:
             "buyShares": self.__buy_or_sell_shares,
             "sellShares": self.__buy_or_sell_shares
         }
+        
+    def __individual_share_prices(self, post_transaction_supply, amount):
+        def get_price(supply, amount):
+            sum1 = 0 if supply == 0 else (supply - 1) * supply * (2 * (supply - 1) + 1) // 6
+            sum2 = 0 if supply == 0 and amount == 1 else (supply - 1 + amount) * (supply + amount) * (2 * (supply - 1 + amount) + 1) // 6
+            summation = sum2 - sum1
+            return summation * 1e18 // 16000  # Assuming 1e18 represents 1 ether
+
+        supply = post_transaction_supply - amount
+        
+        prices = []
+        for i in range(1, amount + 1):
+            prices.append(get_price(supply, i) - get_price(supply, i-1))
+            supply += 1
+
+        return prices
 
     def __buy_or_sell_shares(self, trade_events, tx_hash):
         for event in trade_events:
             trader = event["args"]["trader"]
             subject = event['args']['subject']
             is_buy = event['args']['isBuy']
-            share_amount = event['args']['shareAmount']
+            purchase_amount = event['args']['shareAmount']
             # price that was calculated by the contract
             share_price = self.web3.from_wei(event["args"]["ethAmount"], "ether")
             protocol_fee = self.web3.from_wei(event["args"]["protocolEthAmount"], "ether")
             subject_fee = self.web3.from_wei(event["args"]["subjectEthAmount"], "ether")
-            supply = event["args"]["supply"]
+            post_transaction_supply = event["args"]["supply"]
             
             if subject not in self.shares_subject_cache:
                 friend_tech_user, _ = FriendTechUser.objects.get_or_create(address=subject)
@@ -61,22 +76,30 @@ class BlockActions:
                 self.shares_subject_cache[subject] = friend_tech_user
             else:
                 friend_tech_user = self.shares_subject_cache[subject]
-
-            friend_tech_user.shares_supply = supply
+                
+            if purchase_amount > 1:
+                prices = self.__individual_share_prices(post_transaction_supply, purchase_amount)
+            else:
+                prices = [share_price]
+            
+            friend_tech_user.shares_supply = post_transaction_supply
             friend_tech_user.save(update_fields=["shares_supply"])
-            trade = Trade(
-                trader=FriendTechUser.objects.get_or_create(address=trader)[0],
-                subject=friend_tech_user,
-                is_buy=is_buy,
-                share_amount=share_amount,
-                price=share_price,
-                protocol_fee=protocol_fee,
-                subject_fee=subject_fee,
-                supply=supply,
-                block=self.block,
-                hash=tx_hash.hex()
-            )
-            self.trades_to_create.append(trade)
+
+            trade, created = Trade.objects.get_or_create(
+                    trader=FriendTechUser.objects.get_or_create(address=trader)[0],
+                    subject=friend_tech_user,
+                    is_buy=is_buy,
+                    share_amount=purchase_amount,
+                    price=prices[0],
+                    protocol_fee=protocol_fee,
+                    subject_fee=subject_fee,
+                    supply=post_transaction_supply,
+                    block=self.block,
+                    hash=tx_hash.hex()
+                )
+            if created:
+                prices_to_create = [Price(trade=trade, price=price) for price in prices]
+                self.prices_to_create.extend(prices_to_create) 
             self.user_data.append(friend_tech_user.id)
         
         
@@ -97,8 +120,8 @@ class BlockActions:
 
     def __handle_post_processing_db_updates(self):
         with transaction.atomic():
-            if self.trades_to_create:
-                Trade.objects.bulk_create(self.trades_to_create)
+            if self.prices_to_create:
+                Price.objects.bulk_create(self.prices_to_create)
             self.block.date_sniffed = timezone.now()
             self.block.save(update_fields=["date_sniffed"])
             

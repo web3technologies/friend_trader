@@ -57,9 +57,12 @@ class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
         for entry in data:
             time_stamp, price = entry['block__block_timestamp'], entry['price']
 
+            # check if current time is within the current candle stick defined by end_time
             while time_stamp >= end_time:
                 candlesticks.append(current_candle)
 
+                # essentially produce another candle and extend the time to the next candle
+                # eventually the timestamp will be less than the end time
                 time = end_time
                 end_time = time + interval
                 current_candle = {
