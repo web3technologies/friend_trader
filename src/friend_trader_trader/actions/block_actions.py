@@ -81,7 +81,7 @@ class BlockActions:
                 friend_tech_user, _ = FriendTechUser.objects.get_or_create(address=subject)
                 # get share supply from last block
                 # expensive but reliable
-                # friend_tech_user.shares_supply = self.contract.functions.sharesSupply(friend_tech_user.address).call(block_identifier=self.block_number - 1)
+                #friend_tech_user.shares_supply = self.contract.functions.sharesSupply(friend_tech_user.address).call(block_identifier=self.block_number - 1)
                 self.shares_subject_cache[subject] = friend_tech_user
             else:
                 friend_tech_user = self.shares_subject_cache[subject]
