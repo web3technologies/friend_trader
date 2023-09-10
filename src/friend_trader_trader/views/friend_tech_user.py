@@ -1,3 +1,5 @@
+from django.db.models import F, Count
+
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.exceptions import NotFound
@@ -30,7 +32,9 @@ class FriendTechUserViewSet(ModelViewSet):
 class FriendTechUserListView(APIView):
     
     serializer_class = FriendTechUserListSerializer
-    queryset = FriendTechUser.objects.all().order_by("-twitter_followers")
+    queryset = FriendTechUser.objects.annotate(
+            is_null=Count('twitter_followers')
+            ).order_by('-is_null', '-twitter_followers')
     
     def get(self, *args, **kwargs):
         twitter_username = self.request.query_params.get("twitterUsername", "")
