@@ -1,1 +1,1 @@
-from .friend_tech_user import FriendTechUserViewSet
+from .friend_tech_user import FriendTechUserViewSet, FriendTechUserListView

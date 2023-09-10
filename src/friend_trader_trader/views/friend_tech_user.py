@@ -1,8 +1,11 @@
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK
 
 from friend_trader_trader.models import FriendTechUser
-from friend_trader_trader.serializers import FriendTechUserCandleStickSerializer
+from friend_trader_trader.serializers import FriendTechUserCandleStickSerializer, FriendTechUserListSerializer
 
 
 class FriendTechUserViewSet(ModelViewSet):
@@ -22,3 +25,19 @@ class FriendTechUserViewSet(ModelViewSet):
         timeframe = self.request.query_params.get("interval", self.default_interval)
         context["interval"] = timeframe
         return context
+    
+
+class FriendTechUserListView(APIView):
+    
+    serializer_class = FriendTechUserListSerializer
+    queryset = FriendTechUser.objects.all().order_by("-twitter_followers")
+    
+    def get(self, *args, **kwargs):
+        twitter_username = self.request.query_params.get("twitterUsername", "")
+        if twitter_username:
+            users = self.queryset.filter(twitter_username__icontains=twitter_username)
+            user_data = self.serializer_class(users, many=True)
+            return Response(data=user_data.data[0:10], status=HTTP_200_OK)
+        else:
+            return Response(data=[], status=HTTP_200_OK)
+        
