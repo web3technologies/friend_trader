@@ -11,6 +11,13 @@ class FriendTechUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendTechUser
         fields = "__all__"
+        
+        
+class FriendTechUserMinimalSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = FriendTechUser
+        fields = ("twitter_username", "twitter_profile_pic")
 
 
 class FriendTechUserListSerializer(serializers.ModelSerializer):
