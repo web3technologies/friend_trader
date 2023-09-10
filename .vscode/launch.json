@@ -25,7 +25,9 @@
                 "worker",
                 "-l",
                 "info",
-                "-B"
+                "-B",
+                "-c",
+                "6"
             ],
             "justMyCode": false,
             "env":{
