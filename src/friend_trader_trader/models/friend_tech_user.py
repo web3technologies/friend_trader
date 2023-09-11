@@ -39,6 +39,7 @@ class FriendTechUser(models.Model):
             return self
         except Timeout as e:
             print("handle timeout logic")
+            return self
         except DatabaseError as e:
             print(self.address, self.twitter_username, self.twitter_profile_pic, self.last_online)
             raise(e)
