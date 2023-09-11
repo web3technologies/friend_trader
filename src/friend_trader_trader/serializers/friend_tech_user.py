@@ -3,7 +3,7 @@ import pytz
 import time as Time
 from rest_framework import serializers
 
-from friend_trader_trader.models import FriendTechUser
+from friend_trader_trader.models import FriendTechUser, Price
 
 
 class FriendTechUserSerializer(serializers.ModelSerializer):
@@ -47,13 +47,12 @@ class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
         return self.__convert_to_central_time(obj.share_prices.order_by("block__block_timestamp").last().block.block_timestamp)
     
     def generate_candlestick(self, obj, *args, **kwargs):
-        interval = int(self.context.get('interval'))
-        data = obj.share_prices.select_related("block").all().order_by("block__block_timestamp").values("price", "block__block_timestamp")
-        
+        interval = int(self.context.get('interval'))        
+        data = Price.objects.filter(trade__subject=obj).order_by("trade__block__block_timestamp").values("price", "trade__block__block_timestamp")
         if not data:
             return []
 
-        time = (data[0]['block__block_timestamp'] // interval) * interval
+        time = (data[0]['trade__block__block_timestamp'] // interval) * interval
         end_time = time + interval
 
         candlesticks = []
@@ -68,7 +67,7 @@ class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
         }
 
         for entry in data:
-            time_stamp, price = entry['block__block_timestamp'], entry['price']
+            time_stamp, price = entry['trade__block__block_timestamp'], entry['price']
             price = price.normalize()
             # check if current time is within the current candle stick defined by end_time
             while time_stamp >= end_time:
