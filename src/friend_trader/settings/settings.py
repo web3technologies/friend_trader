@@ -88,6 +88,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_SERIALIZER_CLASSES': {
+        'depth': 3  # Ensure depth is sufficient to serialize A -> B -> C
+    },
+}
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'

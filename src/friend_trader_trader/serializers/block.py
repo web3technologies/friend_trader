@@ -7,4 +7,6 @@ class BlockMinimalSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Block
-        fields = ("block_timestamp", "block_hash")
+        fields = ("block_timestamp", "block_hash", "block_number")
+        
+        
