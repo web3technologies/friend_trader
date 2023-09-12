@@ -22,7 +22,7 @@ class TradeSerializer(serializers.ModelSerializer):
     prices = PriceSerializer(many=True, read_only=True)
     trader = FriendTechUserMinimalSerializer(read_only=True)
     subject = FriendTechUserMinimalSerializer(read_only=True)
-    
+    block = serializers.SlugRelatedField("block_number", read_only=True)
     
     class Meta:
         model = Trade
