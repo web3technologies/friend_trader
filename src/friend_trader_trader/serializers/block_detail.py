@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from friend_trader_trader.serializers.trade import TradeSerializer
+from friend_trader_trader.serializers.friend_tech_user import FriendTechUserMinimalSerializer
 
 from friend_trader_trader.models import Block
 
@@ -10,4 +11,4 @@ class BlockDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Block
-        fields = "__all__"
+        exclude = ("id", "date_sniffed")
