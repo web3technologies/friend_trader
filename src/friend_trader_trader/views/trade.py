@@ -16,7 +16,7 @@ class TradeViewSet(ModelViewSet):
     queryset = Trade.objects.prefetch_related("prices").all()
 
     def get_queryset(self):
-        return super().get_queryset().order_by("-block__block_number")[:20]
+        return super().get_queryset().order_by("-block__block_number")[:10]
     
 
 class TradeListView(APIView):
