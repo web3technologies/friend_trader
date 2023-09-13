@@ -17,6 +17,7 @@ class TradeViewSet(ModelViewSet):
 
     def get_queryset(self):
         return super().get_queryset().order_by("-block__block_number")[:10]
+        # return super().get_queryset().filter(prices__price__gte=1).order_by("-block__block_number")[:10]
     
 
 class TradeListView(APIView):
