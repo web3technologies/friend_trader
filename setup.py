@@ -38,7 +38,7 @@ setup(
     name="friend_trader",
     version="0.1.0",
     description="Friend Trader Application",
-    author="Web3Technologies LLC",
+    author="FriendTraderTechnologies LLC",
     author_email="zach@web3technologies.io",
     install_requires=install_requires,
     include_package_data=True,

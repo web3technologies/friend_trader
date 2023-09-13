@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "django_extensions",
     'corsheaders',
     "rest_framework",
+    "rest_framework_simplejwt",
     "friend_trader_auth",
     "friend_trader_dispatcher",
     "friend_trader_trader",
@@ -92,6 +93,15 @@ REST_FRAMEWORK = {
     'DEFAULT_SERIALIZER_CLASSES': {
         'depth': 3  # Ensure depth is sufficient to serialize A -> B -> C
     },
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',)
 }
 
 CACHES = {
