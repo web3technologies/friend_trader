@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 import logging
 from friend_trader_auth.utils.message import gen_message
 from rest_framework_simplejwt.views import TokenObtainPairView
-from friend_trader_auth.serializer.web3_token_serializer import FriendTraderTokenObtainSerializer
+from friend_trader_auth.serializers.web3_token_serializer import FriendTraderTokenObtainSerializer
 
 logger = logging.getLogger(__file__)
 
