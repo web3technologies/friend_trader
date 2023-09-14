@@ -1,4 +1,3 @@
-from ipaddress import ip_address
 from django.contrib.auth import get_user_model
 from web3 import Web3
 from hexbytes import HexBytes
@@ -9,7 +8,6 @@ from friend_trader_auth.utils.message import gen_message
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from friend_trader_auth.models import Connection
 from friend_trader_auth.serializers.user_serializer import FriendTraderUserSerializer
 
 logger = logging.getLogger(__file__)
@@ -26,7 +24,6 @@ class FriendTraderTokenObtainSerializer(TokenObtainPairSerializer):
 
     signature = serializers.CharField()
     message = serializers.CharField()
-    ip_address = serializers.CharField()
 
     def validate(self, attrs):
 
@@ -49,11 +46,6 @@ class FriendTraderTokenObtainSerializer(TokenObtainPairSerializer):
                 if verified_public_address == sent_address_from_request:
                     user.nonce = uuid.uuid4()
                     user.save()
-                    conn = Connection.objects.create(
-                        user=user,
-                        ip_address=ip_address
-                    )
-                    logger.info(f"CONNECTION created from ip_address {conn.ip_address}")
                     refresh = RefreshToken.for_user(user)
                     data = {
                         "refresh": str(refresh),
