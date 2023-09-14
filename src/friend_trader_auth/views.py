@@ -4,8 +4,10 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 import logging
 from friend_trader_auth.utils.message import gen_message
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from friend_trader_auth.serializers.web3_token_serializer import FriendTraderTokenObtainSerializer
+from friend_trader_auth.serializers.user_serializer import FriendTraderUserSerializer
 
 logger = logging.getLogger(__file__)
 
@@ -32,3 +34,14 @@ class FriendTraderNonceView(APIView):
         msg = gen_message(nonce)
 
         return Response(data={"message": msg}, status=status.HTTP_200_OK)
+    
+    
+    
+class FriendTraderUserView(APIView):
+    
+    serializer_class = FriendTraderUserSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        data = self.serializer_class(request.user).data
+        return Response(data=data, status=status.HTTP_200_OK)
