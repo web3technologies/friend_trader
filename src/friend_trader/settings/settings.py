@@ -68,7 +68,7 @@ DATABASES = {
         'NAME': 'friend_trader',
         'USER': 'friend_trader',
         'PASSWORD': 'Testing321.',
-        'HOST': 'localhost',
+        'HOST': config("DATABASE_HOST"),
         'PORT': '5432',
     }
 }
