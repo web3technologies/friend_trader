@@ -15,4 +15,4 @@ STATIC_ROOT = f"/applications/friend_trader/static/"
 
 TEMPLATES[0]['DIRS'] = [STATIC_ROOT]
 
-DEBUG = True
+DEBUG = False
