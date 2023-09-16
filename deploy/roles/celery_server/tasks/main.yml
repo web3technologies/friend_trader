@@ -1,0 +1,63 @@
+- name: create celery var and opt directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: 0777
+  loop:
+    - /var/log/celery
+    - /var/run/celery
+    - /opt/celery
+
+- name: create /etc/conf.d dir
+  file:
+    path: /etc/conf.d
+    state: directory
+
+# - name: copy celery conf file
+#   copy:
+#     src: "celery/celery"
+#     dest: "/etc/conf.d/celery"
+#     mode: 0777
+#   notify: daemon_reload
+
+- name: Update Celery Configuration
+  template:
+    src: celery.conf.j2
+    dest: "/etc/conf.d/celery"
+    mode: 0777
+  vars:
+    django_settings_module: "{{ django_settings }}"
+  notify: daemon_reload
+
+- name: copy celery service file
+  copy:
+    src: "celery/celery.service"
+    dest: "/etc/systemd/system/celery.service"
+    mode: 0777
+  notify: daemon_reload
+
+- name: enable celery service
+  service:
+    name: celery.service
+    state: started
+    enabled: true
+
+- name: copy celery beat service file
+  copy:
+    src: "celery/celerybeat.service"
+    dest: "/etc/systemd/system/celerybeat.service"
+    mode: 0777
+  notify: daemon_reload
+
+- name: enable celerybeat service
+  service:
+    name: celerybeat.service
+    state: started
+    enabled: true
+
+- name: restart_celery
+  service:
+    name: celery
+    state: restarted
