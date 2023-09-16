@@ -1,7 +1,6 @@
 from tweepy.errors import NotFound as TwitterUserNotFound, TweepyException
 from django.conf import settings
 import requests
-import tweepy
 
 from friend_trader_trader.models import FriendTechUser
 from friend_trader_trader.exceptions.exceptions import TwitterForbiddenException
@@ -10,13 +9,6 @@ from friend_trader_trader.exceptions.exceptions import TwitterForbiddenException
 
 class GetUserData:
     
-    twitter_auth = tweepy.OAuth1UserHandler(
-            consumer_key=settings.TWITTER_CONSUMER_KEY,
-            consumer_secret=settings.TWITTER_CONSUMER_SECRET,
-            access_token=settings.TWITTER_ACCESS_TOKEN,
-            access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET
-        )
-    tweepy_client = tweepy.API(twitter_auth)
     
     
     def __init__(self) -> None:

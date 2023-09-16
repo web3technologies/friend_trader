@@ -4,7 +4,7 @@ from django.db.utils import DatabaseError
 from friend_trader_core.clients import kossetto_client
 from requests import Timeout
 import tweepy
-
+import random
 
 class FriendTechUser(models.Model):
     
@@ -20,6 +20,20 @@ class FriendTechUser(models.Model):
     holding_count = models.IntegerField(null=True, default=None)
     last_online = models.BigIntegerField(null=True, default=None)
     
+    tweep_choices = [
+        tweepy.OAuth1UserHandler(
+            consumer_key=settings.TWITTER_CONSUMER_KEY_1,
+            consumer_secret=settings.TWITTER_CONSUMER_SECRET_1,
+            access_token=settings.TWITTER_ACCESS_TOKEN_1,
+            access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET_1
+        ),
+        tweepy.OAuth1UserHandler(
+            consumer_key=settings.TWITTER_CONSUMER_KEY_2,
+            consumer_secret=settings.TWITTER_CONSUMER_SECRET_2,
+            access_token=settings.TWITTER_ACCESS_TOKEN_2,
+            access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET_2
+        )
+    ]
     
     def __str__(self) -> str:
         return f"{self.twitter_username}"
@@ -45,19 +59,13 @@ class FriendTechUser(models.Model):
             raise(e)
         
     def get_twitter_data(self, auto_save=True):
-        twitter_auth = tweepy.OAuth1UserHandler(
-            consumer_key=settings.TWITTER_CONSUMER_KEY,
-            consumer_secret=settings.TWITTER_CONSUMER_SECRET,
-            access_token=settings.TWITTER_ACCESS_TOKEN,
-            access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET
-        )
-        tweepy_client = tweepy.API(twitter_auth)
-        if tweepy_client.rate_limit_status()["resources"].get("users")["/users/:id"].get("remaining") > 0:
-            twitter_user_data = tweepy_client.get_user(screen_name=self.twitter_username)
-            if twitter_user_data:
-                self.twitter_followers = twitter_user_data.followers_count
-                self.twitter_profile_pic = twitter_user_data.profile_image_url_https
-                self.twitter_profile_banner = twitter_user_data.profile_banner_url if hasattr(twitter_user_data, "profile_banner_url") else None
-                if auto_save:
-                    self.save(update_fields=["twitter_followers", "twitter_profile_pic", "twitter_profile_banner"])
+        tweepy_client = tweepy.API(random.choices(self.tweepy_choices))
+        # if tweepy_client.rate_limit_status()["resources"].get("users")["/users/:id"].get("remaining") > 0:
+        twitter_user_data = tweepy_client.get_user(screen_name=self.twitter_username)
+        if twitter_user_data:
+            self.twitter_followers = twitter_user_data.followers_count
+            self.twitter_profile_pic = twitter_user_data.profile_image_url_https
+            self.twitter_profile_banner = twitter_user_data.profile_banner_url if hasattr(twitter_user_data, "profile_banner_url") else None
+            if auto_save:
+                self.save(update_fields=["twitter_followers", "twitter_profile_pic", "twitter_profile_banner"])
         return self
