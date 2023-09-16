@@ -35,7 +35,7 @@ pip install $jenkins_proj_path .
 pip install wheel
 python setup.py bdist_wheel 
 deactivate
-echo "*** Purse Backend Module Created***"
+echo "*** FriendTrader Backend Module Created***"
 
 echo "Building the application"
 application_build_path=/applications/friend_trader.tar
