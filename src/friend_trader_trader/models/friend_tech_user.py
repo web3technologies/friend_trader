@@ -52,11 +52,12 @@ class FriendTechUser(models.Model):
             access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET
         )
         tweepy_client = tweepy.API(twitter_auth)
-        twitter_user_data = tweepy_client.get_user(screen_name=self.twitter_username)
-        if twitter_user_data:
-            self.twitter_followers = twitter_user_data.followers_count
-            self.twitter_profile_pic = twitter_user_data.profile_image_url_https
-            self.twitter_profile_banner = twitter_user_data.profile_banner_url if hasattr(twitter_user_data, "profile_banner_url") else None
-            if auto_save:
-                self.save(update_fields=["twitter_followers", "twitter_profile_pic", "twitter_profile_banner"])
+        if tweepy_client.rate_limit_status()["resources"].get("users")["/users/:id"].get("remaining") > 0:
+            twitter_user_data = tweepy_client.get_user(screen_name=self.twitter_username)
+            if twitter_user_data:
+                self.twitter_followers = twitter_user_data.followers_count
+                self.twitter_profile_pic = twitter_user_data.profile_image_url_https
+                self.twitter_profile_banner = twitter_user_data.profile_banner_url if hasattr(twitter_user_data, "profile_banner_url") else None
+                if auto_save:
+                    self.save(update_fields=["twitter_followers", "twitter_profile_pic", "twitter_profile_banner"])
         return self
