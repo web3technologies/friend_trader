@@ -2,7 +2,7 @@ from .settings import *
 
 
 
-ALLOWED_HOSTS = ["https://backend.friendtrader.tech"]
+ALLOWED_HOSTS = ["backend.friendtrader.tech"]
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
