@@ -59,7 +59,7 @@ class FriendTechUser(models.Model):
             raise(e)
         
     def get_twitter_data(self, auto_save=True):
-        tweepy_client = tweepy.API(random.choices(self.tweepy_choices))
+        tweepy_client = tweepy.API(random.choice(self.tweepy_choices))
         # if tweepy_client.rate_limit_status()["resources"].get("users")["/users/:id"].get("remaining") > 0:
         twitter_user_data = tweepy_client.get_user(screen_name=self.twitter_username)
         if twitter_user_data:
