@@ -32,6 +32,7 @@ class BlockActions:
         self.shares_subject_cache = {}
         self.user_data = []
         self.prices_to_create = []
+        self.trades_to_update = []
         
     @property
     def function_handler(self):
@@ -93,22 +94,36 @@ class BlockActions:
             
             friend_tech_user.shares_supply = post_transaction_supply
             friend_tech_user.save(update_fields=["shares_supply"])
+            
+            default_values = {
+                "trader": FriendTechUser.objects.get_or_create(address=trader)[0],
+                "subject": friend_tech_user,
+                "is_buy": is_buy,
+                "share_amount": purchase_amount,
+                "price": prices[0],
+                "protocol_fee": protocol_fee,
+                "subject_fee": subject_fee,
+                "supply": post_transaction_supply,
+                "block": self.block,
+            }
 
             trade, created = Trade.objects.get_or_create(
-                    trader=FriendTechUser.objects.get_or_create(address=trader)[0],
-                    subject=friend_tech_user,
-                    is_buy=is_buy,
-                    share_amount=purchase_amount,
-                    price=prices[0],
-                    protocol_fee=protocol_fee,
-                    subject_fee=subject_fee,
-                    supply=post_transaction_supply,
-                    block=self.block,
-                    hash=tx_hash.hex()
+                    hash=tx_hash.hex(),
+                    defaults=default_values
                 )
             if created:
                 prices_to_create = [Price(trade=trade, price=price) for price in prices]
                 self.prices_to_create.extend(prices_to_create)
+            # consistency checking
+            # if the trade already exists ensure the prices are the same else delete and update values
+            else:
+                if len(trade.prices.all()) != len(prices):
+                    trade.prices.all().delete()
+                    for key, value in default_values.items():
+                        if hasattr(trade, key):
+                            setattr(trade, key, value)
+                    self.trades_to_update.append(trade)
+                    
             if friend_tech_user.id not in self.user_data:
                 self.user_data.append(friend_tech_user.id)
         
@@ -132,8 +147,14 @@ class BlockActions:
         with transaction.atomic():
             if self.prices_to_create:
                 Price.objects.bulk_create(self.prices_to_create)
+            if self.trades_to_update:
+                Trade.objects.bulk_update(self.trades_to_update, [
+                    "trader", "subject", "is_buy", "share_amount", "price", "protocol_fee", "subject_fee", "supply", "block"
+                ])
+            
             self.block.date_sniffed = timezone.now()
             self.block.save(update_fields=["date_sniffed"])
+            
             
     
     def run(self):

@@ -20,7 +20,7 @@ class FriendTechUser(models.Model):
     holding_count = models.IntegerField(null=True, default=None)
     last_online = models.BigIntegerField(null=True, default=None)
     
-    tweep_choices = [
+    tweepy_choices = [
         tweepy.OAuth1UserHandler(
             consumer_key=settings.TWITTER_CONSUMER_KEY_1,
             consumer_secret=settings.TWITTER_CONSUMER_SECRET_1,

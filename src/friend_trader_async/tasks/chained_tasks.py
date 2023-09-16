@@ -1,7 +1,7 @@
 from celery import shared_task, chain
 
-from friend_trader_dispatcher.tasks.perform_block_actions import  perform_block_actions_task
-from friend_trader_dispatcher.tasks.user_actions import retrieve_users_data_task
+from friend_trader_async.tasks.perform_block_actions import  perform_block_actions_task
+from friend_trader_async.tasks.user_actions import retrieve_users_data_task
 
 @shared_task(
     bind=False, 

@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', f'friend_trader.settings')
 
-app = Celery("friend_trader_dispatcher")
+app = Celery("friend_trader_async")
 
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()

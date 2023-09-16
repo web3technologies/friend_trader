@@ -12,7 +12,7 @@ import websockets
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 from web3 import Web3
 
-from friend_trader_dispatcher.tasks import chained_block_actions_task, sync_blocks_task
+from friend_trader_async.tasks import chained_block_actions_task, sync_blocks_task
 
 
 class FriendTraderListener:

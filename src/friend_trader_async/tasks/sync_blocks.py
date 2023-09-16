@@ -3,7 +3,7 @@ from celery import shared_task, group
 from django.conf import settings
 
 from friend_trader_trader.models import Block
-from friend_trader_dispatcher.tasks.perform_block_actions import  perform_block_actions_task
+from friend_trader_async.tasks.perform_block_actions import  perform_block_actions_task
 
 
 @shared_task(

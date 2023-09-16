@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "friend_trader_auth",
-    "friend_trader_dispatcher",
+    "friend_trader_async",
     "friend_trader_trader",
     "web_socket_manager"
 ]

@@ -21,7 +21,7 @@
             "program": "${workspaceFolder}/venv/bin/celery",
             "args": [
                 "-A",
-                "friend_trader_dispatcher",
+                "friend_trader_async",
                 "worker",
                 "-l",
                 "info",
