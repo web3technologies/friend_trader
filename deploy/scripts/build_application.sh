@@ -46,7 +46,7 @@ pip install wheel
 pip install $jenkins_proj_path/dist/friend_trader-0.1.0-py3-none-any.whl
 cp $jenkins_proj_path/src/manage.py /applications/friend_trader/
 cp $jenkins_proj_path/src/friend_trader/wsgi.py /applications/friend_trader/
-cp "/var/lib/jenkins/envs/friend_trader_${environment}/.env" /applications/friend_trader/
+cp "/var/lib/jenkins/envs/${workspace_name}/.env" /applications/friend_trader/
 echo "Application packages installed into Venv"
 
 echo "Gzipping Application"
