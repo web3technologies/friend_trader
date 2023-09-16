@@ -125,6 +125,33 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    # "filters": {"require_debug_false": {"()": "django.utils.log.RequiredDebugFalse"}},
+    "handlers": {
+        "console":{
+            "class": "logging.StreamHandler"
+        }
+    },
+    #  ... omitting the formatters and handlers for brevity ...
+    'loggers': {
+        # ...  you may have other loggers here as well ...
+        'django': {
+            'handlers': ['console'],
+            'propagate': True,
+        },
+        'purse_finance': {
+            'handlers': ['console'],
+            'propagate': True,
+        },
+        'purse_async': {
+            'handlers': ['console'],
+            'propagate': True,
+        }
+    }
+}
+
 CELERY_BROKER_URL = 'amqp://'
 
 CELERY_TIMEZONE = TIME_ZONE
