@@ -15,13 +15,6 @@
     path: /etc/conf.d
     state: directory
 
-# - name: copy celery conf file
-#   copy:
-#     src: "celery/celery"
-#     dest: "/etc/conf.d/celery"
-#     mode: 0777
-#   notify: daemon_reload
-
 - name: Update Celery Configuration
   template:
     src: celery.conf.j2
@@ -60,4 +53,33 @@
 - name: restart_celery
   service:
     name: celery
+    state: restarted
+
+
+- name: create websocket manager var directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: 0777
+  loop:
+    - /var/log/web_socket_manager
+
+- name: copy websocket manager service file
+  copy:
+    src: "celery/celery.service"
+    dest: "/etc/systemd/system/celery.service"
+    mode: 0777
+  notify: daemon_reload
+
+- name: enable web socket manager service
+  service:
+    name: web_socket_manager.service
+    state: started
+    enabled: true
+
+- name: restart web socket manager
+  service:
+    name: web_socket_manager
     state: restarted

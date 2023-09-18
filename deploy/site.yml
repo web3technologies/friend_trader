@@ -1,6 +1,11 @@
- - hosts: web_servers
+#  - hosts: web_servers
+#    become: true
+
+#    roles:
+#      - web_servers
+
+ - hosts: celery_server
    become: true
 
    roles:
-     - web_servers
- 
+     - celery_server
