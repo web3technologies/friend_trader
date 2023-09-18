@@ -11,8 +11,8 @@ RestartSec=5s
 User=ubuntu
 Group=ubuntu
 Environment="PATH=/applications/friend_trader/venv/bin"
-StandardOutput=append:/applications/friend_trader/logs/web_socket_manager_output.log
-StandardError=append:/applications/friend_trader/logs/web_socket_manager_error.log
+StandardOutput=append:/var/log/web_socket_manager/web_socket_manager_output.log
+StandardError=append:/var/log/web_socket_manager/web_socket_manager_error.log
 
 [Install]
 WantedBy=multi-user.target
