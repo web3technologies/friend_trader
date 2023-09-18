@@ -1,3 +1,32 @@
+- name: remove current project dir
+  file:
+    path: "/applications/friend_trader/"
+    state: absent
+
+- name: make project dir
+  file:
+    path: "/applications/friend_trader/"
+    state: directory
+
+- name: unarchive project tar
+  unarchive:
+    src:  "/tmp/friend_trader.tar"
+    dest:  "/"
+    copy: True
+    list_files: True
+
+- name: install python3 and pip3
+  package:
+    name:
+      - python3-pip
+      - python-is-python3
+      - python3.10-venv
+
+- name: Make friend_trader_ws.py executable
+  file:
+    path: /applications/friend_trader/friend_trader_ws.py
+    mode: 0777
+
 - name: create celery var and opt directories
   file:
     path: "{{ item }}"
