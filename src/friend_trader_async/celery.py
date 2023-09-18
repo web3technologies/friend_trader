@@ -5,10 +5,12 @@ from celery import Celery
 from celery.app.log import TaskFormatter
 from celery.signals import after_setup_task_logger, after_task_publish
 
+from decouple import config
+
 _logger = logging.getLogger(__name__)
 
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', f'friend_trader.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', f'friend_trader.settings.{config("ENVIRONMENT")}')
 
 app = Celery("friend_trader_async")
 
