@@ -1,8 +1,8 @@
-#  - hosts: web_servers
-#    become: true
+ - hosts: web_servers
+   become: true
 
-#    roles:
-#      - web_servers
+   roles:
+     - web_servers
 
  - hosts: celery_server
    become: true
