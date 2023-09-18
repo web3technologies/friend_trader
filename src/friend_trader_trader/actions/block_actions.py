@@ -6,6 +6,7 @@ from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
 
+from web_socket_manager.abi import abis
 from friend_trader_trader.models import Block, FriendTechUser, Trade, Price
 
 
@@ -14,9 +15,6 @@ class BlockActions:
     ankr_url = "https://rpc.ankr.com/base"
     CONTRACT_ADDRESS = "0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4"
     SUCCESSFUL_TRANSACTION_IDENTIFIER = 1
-
-    with open(settings.BASE_DIR / "src" / "web_socket_manager" / "abi.json", "r") as abis:
-        contract_abis = json.loads(abis.read())
 
     web3_providers = [
             # Web3(Web3.HTTPProvider(ankr_url)),
@@ -28,7 +26,7 @@ class BlockActions:
         self.block_number = block_number
         self.block = Block.objects.get_or_create(block_number=block_number)[0]
         self.web3 = random.choice(self.web3_providers)
-        self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=self.contract_abis)
+        self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=abis)
         self.shares_subject_cache = {}
         self.user_data = []
         self.prices_to_create = []

@@ -1,1 +1,0 @@
-recursive-include src/web_socket_manager *.json
