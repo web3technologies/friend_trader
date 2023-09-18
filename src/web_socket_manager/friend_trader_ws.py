@@ -1,3 +1,4 @@
+#!/applications/friend_trader/venv/bin/python3
 import json
 import os
 import django
