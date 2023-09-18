@@ -97,8 +97,8 @@
 
 - name: copy websocket manager service file
   copy:
-    src: "celery/celery.service"
-    dest: "/etc/systemd/system/celery.service"
+    src: "web_socket/web_socket_manager.service"
+    dest: "/etc/systemd/system/web_socket_manager.service"
     mode: 0777
   notify: daemon_reload
 
