@@ -1,5 +1,6 @@
 from .settings import *
 
+CELERY_BROKER_URL = 'amqp://'
 
 ALLOWED_HOSTS = ["*"]
 

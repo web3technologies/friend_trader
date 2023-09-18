@@ -152,7 +152,7 @@ LOGGING = {
     }
 }
 
-CELERY_BROKER_URL = 'amqp://'
+
 
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
