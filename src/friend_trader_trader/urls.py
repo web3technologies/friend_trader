@@ -13,7 +13,7 @@ router.register(r"trade", TradeViewSet)
 urlpatterns = [
     path("friend-tech-user-list/", FriendTechUserListView.as_view()),
     path("trades/<str:address>/", TradeListView.as_view()),
-    path("protocol-metrics/", ProtocolMetrics.as_view()),
+    # path("protocol-metrics/", ProtocolMetrics.as_view()),
     path("volume/", TradeVolumeView.as_view())
 ]
 
