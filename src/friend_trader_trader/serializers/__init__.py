@@ -1,3 +1,4 @@
 from .friend_tech_user import FriendTechUserSerializer, FriendTechUserCandleStickSerializer, FriendTechUserListSerializer, FriendTechUserMinimalSerializer
 from .trade import TradeListSerializer, TradeSerializer
 from .block import BlockMinimalSerializer
+from .volume_serializer import VolumeSerializer
