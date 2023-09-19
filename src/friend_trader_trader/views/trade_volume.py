@@ -4,6 +4,9 @@ from django.db.models import Sum
 from django.db.models.functions import TruncMonth, TruncDay, TruncWeek
 from django.db.models import DateField, ExpressionWrapper, F
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -14,6 +17,7 @@ from friend_trader_trader.serializers.volume_serializer import VolumeSerializer
 
 class TradeVolumeView(APIView):
     
+    @method_decorator(cache_page(60*15), name="dispatch")
     def get(self, request, *args, **kwargs):
         
         period = self.request.query_params.get("period")
