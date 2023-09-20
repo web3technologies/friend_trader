@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework import routers
 
-from friend_trader_trader.views import BlockViewset, FriendTechUserViewSet, FriendTechUserListView, ProtocolMetrics, TradeListView, TradeViewSet, TradeVolumeView
+from friend_trader_trader.views import BlockViewset, FriendTechUserViewSet, FriendTechUserListView, ProtocolMetrics, TradeListView, TradeViewSet, TradeVolumeView, TopGainerLoserView
 
 # Routers provide a way of automatically determining the URL conf.
 router = routers.DefaultRouter()
@@ -14,7 +14,8 @@ urlpatterns = [
     path("friend-tech-user-list/", FriendTechUserListView.as_view()),
     path("trades/<str:address>/", TradeListView.as_view()),
     # path("protocol-metrics/", ProtocolMetrics.as_view()),
-    path("volume/", TradeVolumeView.as_view())
+    path("volume/", TradeVolumeView.as_view()),
+    path("top-gainer-loser", TopGainerLoserView.as_view())
 ]
 
 urlpatterns += router.urls
