@@ -6,7 +6,7 @@ from django.db.models import Case, When, F, Sum
 from friend_trader_trader.models import Trade, Price
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.db.models import DecimalField, F, FloatField, Max, Min, OuterRef, Subquery
+from django.db.models import DecimalField, F, FloatField, Max, Min, OuterRef, Subquery, Value
 
 
 class TopGainerLoserView(APIView):
@@ -49,7 +49,11 @@ class TopGainerLoserView(APIView):
             )
         ).annotate(
             total_price_change=F('last_price_of_day') - F('first_price_of_day'),
-            percent_change=(F('total_price_change') / F('first_price_of_day')) * 100
+            percent_change=Case(
+                When(first_price_of_day=0, then=Value(None)),
+                default=(F("total_price_change") / F("first_price_of_day")) * 100,
+                output_field=FloatField()
+            )
         ).values('subject', 'total_price_change', 'percent_change').distinct('subject')
 
 
