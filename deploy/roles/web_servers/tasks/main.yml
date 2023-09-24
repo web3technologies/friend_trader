@@ -40,9 +40,11 @@
 - name: migrate
   django_manage:
     command: migrate
+    arguments: "--verbosity=3"
     app_path: "/applications/friend_trader/"
     settings: "friend_trader.settings.{{ deploy_env }}"
     virtualenv: "/applications/friend_trader/venv"
+
 
 - name: collect static
   django_manage:
