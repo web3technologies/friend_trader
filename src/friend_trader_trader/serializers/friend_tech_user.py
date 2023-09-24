@@ -32,7 +32,7 @@ class FriendTechUserListLatestPriceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = FriendTechUser
-        fields = ("id", "twitter_username", "twitter_profile_pic", "twitter_followers", "latest_price")
+        fields = ("id", "twitter_username", "twitter_profile_pic", "twitter_followers", "latest_price", "shares_supply")
         
 
 class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
