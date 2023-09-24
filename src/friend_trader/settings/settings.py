@@ -84,8 +84,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    # 'PAGE_SIZE': 50,
+    'ANONYMOUS_THROTTLE_RATE': '100/hour',   # example rate
+    'ANONYMOUS_THROTTLE_CLASS': 'rest_framework.throttling.AnonRateThrottle',
 }
 
 SIMPLE_JWT = {

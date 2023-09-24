@@ -1,9 +1,12 @@
 from django.db.models import Count
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
+from rest_framework.throttling import AnonRateThrottle
 
 from friend_trader_trader.models import FriendTechUser
 from friend_trader_trader.serializers import FriendTechUserCandleStickSerializer, FriendTechUserListSerializer, FriendTechUserListLatestPriceSerializer
@@ -20,7 +23,11 @@ class FriendTechUserViewSet(ModelViewSet):
     serializer_class = FriendTechUserCandleStickSerializer
     lookup_field = "twitter_username"
     default_interval = 3600
+    http_method_names = ['get', 'head', 'options']
+    throttle_classes = [AnonRateThrottle]
     
+    
+    @method_decorator(cache_page(60*15), name="dispatch")
     def list(self, request, *args, **kwargs):
         pagination_class = FiftyItemsPagination()
         
