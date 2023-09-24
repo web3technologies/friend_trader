@@ -98,7 +98,7 @@ class BlockActions:
                 "subject": friend_tech_user,
                 "is_buy": is_buy,
                 "share_amount": purchase_amount,
-                "price": prices[0],
+                "price": prices[-1],
                 "protocol_fee": protocol_fee,
                 "subject_fee": subject_fee,
                 "supply": post_transaction_supply,

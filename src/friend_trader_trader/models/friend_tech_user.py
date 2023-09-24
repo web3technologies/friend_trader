@@ -87,12 +87,18 @@ class FriendTechUser(models.Model):
     
 
     
-    def get_candlestick_data(self, interval):      
-        data = self.share_prices.all().order_by("block__block_timestamp").values("price", "block__block_timestamp")
+    def get_candlestick_data(self, interval):
+        from friend_trader_trader.models.price import Price
+              
+        data = Price.objects.filter(
+                trade__subject=self
+            ).annotate(
+                block_timestamp=models.F('trade__block__block_timestamp')
+            ).values('price', 'block_timestamp').order_by('block_timestamp')
         if not data:
             return []
 
-        time = (data[0]['block__block_timestamp'] // interval) * interval
+        time = (data[0]['block_timestamp'] // interval) * interval
         end_time = time + interval
 
         candlesticks = []
@@ -107,7 +113,7 @@ class FriendTechUser(models.Model):
         }
 
         for entry in data:
-            time_stamp, price = entry['block__block_timestamp'], entry['price']
+            time_stamp, price = entry['block_timestamp'], entry['price']
             price = price.normalize()
             # check if current time is within the current candle stick defined by end_time
             while time_stamp >= end_time:
