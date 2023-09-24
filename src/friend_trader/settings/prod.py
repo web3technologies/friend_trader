@@ -3,6 +3,19 @@ from .settings import *
 
 ALLOWED_HOSTS = ["friendtrader.tech", "backend.friendtrader.tech"]
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'friend_trader',
+        'USER': 'friend_trader',
+        'PASSWORD': config("DATABASE_PASSWORD"),
+        'HOST': config("DATABASE_HOST"),
+        'PORT': '5432',
+    }
+}
+
+
+
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "https://friendtrader.tech"

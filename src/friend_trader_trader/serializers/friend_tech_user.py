@@ -4,7 +4,7 @@ import time as Time
 from rest_framework import serializers
 
 from friend_trader_trader.models import FriendTechUser, Price
-
+from friend_trader_trader.serializers.price import PriceSerializer
 
 class FriendTechUserSerializer(serializers.ModelSerializer):
     
@@ -25,6 +25,14 @@ class FriendTechUserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendTechUser
         fields = ("twitter_username", "twitter_profile_pic", "twitter_followers")
+        
+class FriendTechUserListLatestPriceSerializer(serializers.ModelSerializer):
+    
+    latest_price = PriceSerializer(read_only=True)
+    
+    class Meta:
+        model = FriendTechUser
+        fields = ("twitter_username", "twitter_profile_pic", "twitter_followers", "latest_price")
         
 
 class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):

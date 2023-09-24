@@ -1,9 +1,10 @@
-from celery import shared_task, group
+from celery import shared_task, chain, group
 
 from django.conf import settings
 
 from friend_trader_trader.models import Block
 from friend_trader_async.tasks.perform_block_actions import  perform_block_actions_task
+from friend_trader_async.tasks.update_latest_price import update_latest_price_task
 
 
 @shared_task(
@@ -21,7 +22,6 @@ def sync_blocks_task(block_number=None):
     )
 
     should_have_blocks = set(range(initial_block_num, block_number + 1))
-
     missing_blocks = list(should_have_blocks - blocks_nums_stored)
     missing_blocks.sort()
     if missing_blocks:
@@ -30,7 +30,7 @@ def sync_blocks_task(block_number=None):
         batch_count = 0
         for block_num in missing_blocks:
             block_actions_to_perform.append(
-                perform_block_actions_task.s(block_number=block_num)
+                chain(perform_block_actions_task.s(block_number=block_num), update_latest_price_task.s())
             )
             batch_count += 1
             if batch_count == 250:

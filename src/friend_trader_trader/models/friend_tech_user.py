@@ -6,6 +6,7 @@ from requests import Timeout
 import tweepy
 import random
 
+
 class FriendTechUser(models.Model):
     
     address = models.CharField(max_length=255, unique=True)
@@ -19,6 +20,7 @@ class FriendTechUser(models.Model):
     holder_count = models.IntegerField(null=True, default=None)
     holding_count = models.IntegerField(null=True, default=None)
     last_online = models.BigIntegerField(null=True, default=None)
+    latest_price = models.OneToOneField("Price", default=None, null=True, related_name="latest_price", on_delete=models.CASCADE)
     
     tweepy_choices = [
         tweepy.OAuth1UserHandler(
@@ -68,4 +70,12 @@ class FriendTechUser(models.Model):
             self.twitter_profile_banner = twitter_user_data.profile_banner_url if hasattr(twitter_user_data, "profile_banner_url") else None
             if auto_save:
                 self.save(update_fields=["twitter_followers", "twitter_profile_pic", "twitter_profile_banner"])
+        return self
+    
+    def update_latest_price(self, auto_save=True):
+        if latest_trade := self.share_prices.prefetch_related("prices").order_by("block__block_timestamp").last():
+            latest_price = latest_trade.prices.last()
+            self.latest_price = latest_price
+            if auto_save:
+                self.save(update_fields=["latest_price"])
         return self

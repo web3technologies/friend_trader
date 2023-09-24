@@ -31,7 +31,7 @@
             ],
             "justMyCode": false,
             "env":{
-                "DJANGO_SETTINGS_MODULE": "friend_trader.settings.settings",
+                "DJANGO_SETTINGS_MODULE": "friend_trader.settings.dev",
             }
         },
         {

@@ -62,18 +62,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'friend_trader.wsgi.application'
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'friend_trader',
-        'USER': 'friend_trader',
-        'PASSWORD': config("DATABASE_PASSWORD"),
-        'HOST': config("DATABASE_HOST"),
-        'PORT': '5432',
-    }
-}
-
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -95,7 +83,9 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # 'PAGE_SIZE': 50,
 }
 
 SIMPLE_JWT = {
@@ -128,24 +118,22 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    # "filters": {"require_debug_false": {"()": "django.utils.log.RequiredDebugFalse"}},
     "handlers": {
         "console":{
             "class": "logging.StreamHandler"
         }
     },
-    #  ... omitting the formatters and handlers for brevity ...
     'loggers': {
-        # ...  you may have other loggers here as well ...
         'django': {
             'handlers': ['console'],
             'propagate': True,
+            "level": "INFO"
         },
-        'purse_finance': {
+        'friend_trader_trader': {
             'handlers': ['console'],
             'propagate': True,
         },
-        'purse_async': {
+        'friend_trader_async': {
             'handlers': ['console'],
             'propagate': True,
         }
