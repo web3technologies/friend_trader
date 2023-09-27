@@ -29,11 +29,18 @@ class FriendTechUserListSerializer(serializers.ModelSerializer):
 class FriendTechUserListLatestPriceSerializer(serializers.ModelSerializer):
     
     latest_price = PriceSerializer(read_only=True)
+    last_trade_time = serializers.SerializerMethodField("last_trade_time")
     
     class Meta:
         model = FriendTechUser
         fields = ("id", "twitter_username", "twitter_profile_pic", "twitter_followers", "latest_price", "shares_supply")
-        
+    
+    def last_trade_time(self, obj, *args, **kwargs):
+        if last_trade := obj.share_prices.select_related("block").order_by("block__block_timestamp").last():
+            return last_trade.block.block_timestamp
+        else:
+            return None
+    
 
 class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
     
