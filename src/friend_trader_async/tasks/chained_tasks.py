@@ -13,7 +13,7 @@ def chained_block_actions_task(block_number=None):
     ).apply_async()
     
     
-@shared_task
+@shared_task(bind=False, name="dispatch_to_grouped_tasks")
 def dispatch_to_grouped_tasks(user_id_result):
     tasks_to_run = [
         retrieve_users_data_task.s(user_id_result),
