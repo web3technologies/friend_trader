@@ -25,7 +25,7 @@ class FriendTechUser(models.Model):
     holder_count = models.IntegerField(null=True, default=None)
     holding_count = models.IntegerField(null=True, default=None)
     last_online = models.BigIntegerField(null=True, default=None)
-    latest_price = models.OneToOneField("Price", default=None, null=True, related_name="latest_price", on_delete=models.CASCADE)
+    latest_price = models.OneToOneField("Price", default=None, null=True, related_name="latest_price", on_delete=models.DO_NOTHING)
     
     tweepy_choices = [
         tweepy.OAuth1UserHandler(
@@ -80,12 +80,11 @@ class FriendTechUser(models.Model):
     def update_latest_price(self, auto_save=True):
         from friend_trader_trader.models import Price
         last_price = Price.objects.filter(trade__subject=self).order_by("trade__block__block_timestamp").last()
-        self.latest_price = last_price
-        if auto_save:
-            self.save(update_fields=["latest_price"])
+        if (not self.latest_price) or (last_price.trade.block.block_timestamp > self.latest_price.trade.block.block_timestamp):
+            self.latest_price = last_price
+            if auto_save:
+                self.save(update_fields=["latest_price"])
         return self
-    
-
     
     def get_candlestick_data(self, interval):
         from friend_trader_trader.models.price import Price
