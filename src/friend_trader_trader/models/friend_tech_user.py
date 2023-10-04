@@ -78,11 +78,11 @@ class FriendTechUser(models.Model):
         return self
     
     def update_latest_price(self, auto_save=True):
-        if latest_trade := self.share_prices.prefetch_related("prices").order_by("block__block_timestamp").last():
-            latest_price = latest_trade.prices.last()
-            self.latest_price = latest_price
-            if auto_save:
-                self.save(update_fields=["latest_price"])
+        from friend_trader_trader.models import Price
+        last_price = Price.objects.filter(trade__subject=self).order_by("trade__block__block_timestamp").last()
+        self.latest_price = last_price
+        if auto_save:
+            self.save(update_fields=["latest_price"])
         return self
     
 

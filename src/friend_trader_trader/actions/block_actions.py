@@ -28,7 +28,7 @@ class BlockActions:
         self.web3 = random.choice(self.web3_providers)
         self.contract = self.web3.eth.contract(address=self.CONTRACT_ADDRESS, abi=abis)
         self.shares_subject_cache = {}
-        self.user_data = []
+        self.user_data_set = set()
         self.prices_to_create = []
         self.trades_to_update = []
         
@@ -122,8 +122,7 @@ class BlockActions:
                             setattr(trade, key, value)
                     self.trades_to_update.append(trade)
                     
-            if friend_tech_user.id not in self.user_data:
-                self.user_data.append(friend_tech_user.id)
+            self.user_data_set.add(friend_tech_user.id)
         
         
     def __perform_block_actions(self):
@@ -158,4 +157,4 @@ class BlockActions:
     def run(self):
         self.__perform_block_actions()
         self.__handle_post_processing_db_updates()
-        return self.user_data
+        return list(self.user_data_set)
