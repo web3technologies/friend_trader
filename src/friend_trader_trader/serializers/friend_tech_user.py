@@ -44,9 +44,11 @@ class FriendTechUserListLatestPriceSerializer(serializers.ModelSerializer):
 
 class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
     
+    
     candle_stick_data = serializers.SerializerMethodField("generate_candlestick")
     first_trade = serializers.SerializerMethodField("get_first_trade")
     last_trade = serializers.SerializerMethodField("get_last_trade")
+    latest_price = serializers.SlugRelatedField(slug_field="price", read_only=True)
     
     def get_first_trade(self, obj):
         return convert_to_central_time(obj.share_prices.order_by("block__block_timestamp").first().block.block_timestamp)
