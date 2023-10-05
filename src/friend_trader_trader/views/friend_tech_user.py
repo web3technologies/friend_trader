@@ -32,7 +32,7 @@ class FriendTechUserViewSet(ModelViewSet):
         pagination_class = FiftyItemsPagination()
         
         paginated_queryset = pagination_class.paginate_queryset(
-            queryset=self.queryset.exclude(latest_price=None).order_by("-latest_price__price"), 
+            queryset=self.queryset.exclude(latest_price=None).order_by("-latest_price__price", "id").distinct("latest_price__price", "id"),
             request=request, 
             view=self
         )
