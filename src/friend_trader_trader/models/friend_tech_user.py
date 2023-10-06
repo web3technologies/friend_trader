@@ -4,12 +4,14 @@ import time as Time
 from django.conf import settings
 from django.db import models
 from django.db.utils import DatabaseError
+
 from requests import Timeout
 import tweepy
 import random
 
 from friend_trader_core.clients import kossetto_client
 from friend_trader_core.utils import convert_to_central_time
+
 
 
 class FriendTechUser(models.Model):
@@ -26,6 +28,8 @@ class FriendTechUser(models.Model):
     holding_count = models.IntegerField(null=True, default=None)
     last_online = models.BigIntegerField(null=True, default=None)
     latest_price = models.OneToOneField("Price", default=None, null=True, related_name="latest_price", on_delete=models.DO_NOTHING)
+    
+    watchers = models.ManyToManyField(settings.AUTH_USER_MODEL, through='FriendTechUserWatchList', related_name='watchlist')
     
     tweepy_choices = [
         tweepy.OAuth1UserHandler(

@@ -4,3 +4,4 @@ from .block import BlockViewset
 from .protocol_metrics import ProtocolMetrics
 from .trade_volume import TradeVolumeView
 from .top_gainer_loser import TopGainerLoserView
+from .watchlist import FriendTechUserWatchListViewset
