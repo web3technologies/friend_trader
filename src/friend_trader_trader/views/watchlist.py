@@ -1,5 +1,10 @@
+from django.db.utils import IntegrityError
+
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.status import HTTP_400_BAD_REQUEST
+
 
 from friend_trader_core.mixins import ThrottleMixin
 from friend_trader_trader.models import FriendTechUserWatchList
@@ -26,4 +31,7 @@ class FriendTechUserWatchListViewset(ModelViewSet, ThrottleMixin):
 
     def create(self, request, *args, **kwargs):
         request.data["user"] = request.user.id
-        return super().create(request, *args, **kwargs)
+        try:
+            return super().create(request, *args, **kwargs)
+        except IntegrityError:
+            return Response(data={"Watch Relation Already Exists"}, status=HTTP_400_BAD_REQUEST)
