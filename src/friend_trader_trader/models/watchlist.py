@@ -6,9 +6,15 @@ from friend_trader_trader.models import FriendTechUser
 
 
 class FriendTechUserWatchList(models.Model):
+    
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     friend_tech_user = models.ForeignKey(FriendTechUser, on_delete=models.CASCADE)
     date_added = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'friend_tech_user'], name='unique_user_friendtechuser')
+        ]
 
 
 

@@ -56,7 +56,7 @@ class FriendTechUserListLatestPriceSerializer(serializers.ModelSerializer):
         if not first_price_since_24_hours_ago:
             return 0
          
-        if obj.latest_price.price == 0:
+        if not obj.latest_price or obj.latest_price.price == 0:
             return 0
         percent_change = (1 - (first_price_since_24_hours_ago.price / obj.latest_price.price)) * 100
         return percent_change
