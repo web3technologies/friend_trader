@@ -27,7 +27,7 @@ class FriendTechUserViewSet(ModelViewSet):
     throttle_classes = [AnonRateThrottle]
     
     
-    # @method_decorator(cache_page(60*15), name="dispatch")
+    @method_decorator(cache_page(60*15), name="dispatch")
     def list(self, request, *args, **kwargs):
         pagination_class = FiftyItemsPagination()
         
