@@ -10,12 +10,13 @@ from django.views.decorators.cache import cache_page
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from friend_trader_core.mixins import ThrottleMixin
 from friend_trader_trader.models import Trade
 from friend_trader_trader.serializers.volume_serializer import VolumeSerializer
 
 
 
-class TradeVolumeView(APIView):
+class TradeVolumeView(APIView, ThrottleMixin):
     
     @method_decorator(cache_page(60*15), name="dispatch")
     def get(self, request, *args, **kwargs):

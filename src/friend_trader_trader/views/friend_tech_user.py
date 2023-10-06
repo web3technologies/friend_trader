@@ -2,23 +2,27 @@ from django.db.models import Count
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
 from rest_framework.throttling import AnonRateThrottle
+from rest_framework.views import APIView
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from friend_trader_core.mixins import ThrottleMixin
 from friend_trader_trader.models import FriendTechUser
 from friend_trader_trader.serializers import FriendTechUserCandleStickSerializer, FriendTechUserListSerializer, FriendTechUserListLatestPriceSerializer
 from friend_trader_trader.pagination.fifty_items import FiftyItemsPagination
 
 
-class FriendTechUserViewSet(ModelViewSet):
+class FriendTechUserViewSet(ReadOnlyModelViewSet, ThrottleMixin):
+    
     """
         List will return a list of users and some associated data. This is primarily used on the home page
         Retrieve  will return the detail of a user and the associated candlestick data. 
         It is used in the detail page of a user
     """
+
     queryset = FriendTechUser.objects.prefetch_related("share_prices", "trades").all()
     serializer_class = FriendTechUserCandleStickSerializer
     lookup_field = "twitter_username"
@@ -58,7 +62,7 @@ class FriendTechUserViewSet(ModelViewSet):
         return context
     
 
-class FriendTechUserListView(APIView):
+class FriendTechUserListView(APIView, ThrottleMixin):
     """
         This view will return the list of users
         It is primarily used in the lookup of users in the search bar

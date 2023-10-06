@@ -1,16 +1,17 @@
 import time
 from datetime import timedelta
-
-from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
-from rest_framework.views import APIView
-
-from friend_trader_trader.models import Price
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK
 
-class ProtocolMetrics(APIView):
+from friend_trader_core.mixins import ThrottleMixin
+from friend_trader_trader.models import Price
+
+
+class ProtocolMetrics(APIView, ThrottleMixin):
     
     model = Price
     
