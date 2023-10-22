@@ -19,7 +19,7 @@ install_requires = [
     "requests ~= 2.28.1",
     "twilio ~= 7.16.0",
     "tweepy ~= 4.14.0",
-    "web3 ~= 6.9.0",
+    "web3 ~= 6.11.1",
     "websockets ~= 11.0.3"
 ]
 
