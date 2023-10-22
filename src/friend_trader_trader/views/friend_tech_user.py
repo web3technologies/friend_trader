@@ -37,7 +37,7 @@ class FriendTechUserViewSet(ReadOnlyModelViewSet, ThrottleMixin):
         
         if data is None:
             data = get_paginated_data_for_page(page)
-            cache.set(settings.FRIEND_TECH_USER_LIST_CACHE_KEY_PATTERN.format(page=page), data, 60*15)
+            cache.set(settings.FRIEND_TECH_USER_LIST_CACHE_KEY_PATTERN.format(page=page), data, 60*10)
             
         return Response(data)
     
