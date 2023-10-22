@@ -2,7 +2,9 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 
-from friend_trader_core.settings import *
+# from friend_trader_core.settings import *
+
+FRIEND_TECH_USER_LIST_CACHE_KEY_PATTERN = "friend_tech_user_list_{page}"
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
