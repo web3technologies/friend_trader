@@ -1,7 +1,6 @@
+from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Count
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-
 
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
@@ -10,9 +9,11 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from friend_trader_core.mixins import ThrottleMixin
+from friend_trader_trader.mixins.friend_tech_list_mixin import get_paginated_data_for_page
 from friend_trader_trader.models import FriendTechUser
 from friend_trader_trader.serializers import FriendTechUserCandleStickSerializer, FriendTechUserListSerializer, FriendTechUserListLatestPriceSerializer
 from friend_trader_trader.pagination.fifty_items import FiftyItemsPagination
+
 
 
 class FriendTechUserViewSet(ReadOnlyModelViewSet, ThrottleMixin):
@@ -30,23 +31,15 @@ class FriendTechUserViewSet(ReadOnlyModelViewSet, ThrottleMixin):
     http_method_names = ['get', 'head', 'options']
     throttle_classes = [AnonRateThrottle]
     
-    
-    @method_decorator(cache_page(60*15), name="dispatch")
     def list(self, request, *args, **kwargs):
-        pagination_class = FiftyItemsPagination()
+        page = request.GET.get('page', 1)
+        data = cache.get(settings.FRIEND_TECH_USER_LIST_CACHE_KEY_PATTERN.format(page=page))
         
-        paginated_queryset = pagination_class.paginate_queryset(
-            queryset=self.queryset.exclude(latest_price=None).order_by("-latest_price__price", "id").distinct("latest_price__price", "id"),
-            request=request, 
-            view=self
-        )
-        
-        if paginated_queryset is not None:
-            serializer = self.get_serializer_class()(paginated_queryset, many=True)
-            return pagination_class.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer_class()(self.queryset, many=True)
-        return Response(serializer.data)
+        if data is None:
+            data = get_paginated_data_for_page(page)
+            cache.set(settings.FRIEND_TECH_USER_LIST_CACHE_KEY_PATTERN.format(page=page), data, 60*15)
+            
+        return Response(data)
     
     def get_serializer_class(self):
         if self.action == "list":

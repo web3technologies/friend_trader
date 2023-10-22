@@ -2,6 +2,8 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 
+from friend_trader_core.settings import *
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 SECRET_KEY = config("SECRET_KEY")
