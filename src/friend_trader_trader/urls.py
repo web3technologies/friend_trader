@@ -16,7 +16,7 @@ urlpatterns = [
     path("trades/<str:address>/", TradeListView.as_view()),
     # path("protocol-metrics/", ProtocolMetrics.as_view()),
     path("volume/", TradeVolumeView.as_view()),
-    path("top-gainer-loser", TopGainerLoserView.as_view())
+    # path("top-gainer-loser/", TopGainerLoserView.as_view())
 ]
 
 urlpatterns += router.urls
