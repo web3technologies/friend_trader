@@ -14,6 +14,7 @@ install_requires = [
     "django-phonenumber-field ~= 7.0.1",
     "djangorestframework ~= 3.14.0",
     "djangorestframework-simplejwt ~= 5.2.1",
+    "eth-utils ~= 2.2.2",
     "psycopg2-binary ~= 2.9.3",
     "python-decouple ~= 3.6",
     "requests ~= 2.28.1",
