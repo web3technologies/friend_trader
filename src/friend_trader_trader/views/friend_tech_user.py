@@ -11,7 +11,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from friend_trader_core.mixins import ThrottleMixin
 from friend_trader_trader.mixins.friend_tech_list_mixin import get_paginated_data_for_page
 from friend_trader_trader.models import FriendTechUser, FriendTechUserWatchList
-from friend_trader_trader.serializers import FriendTechUserCandleStickSerializer, FriendTechUserListSerializer, FriendTechUserListLatestPriceSerializer
+from friend_trader_trader.serializers import FriendTechUserCandleStickSerializer, FriendTechUserListSerializer, FriendTechUserListLatestPriceSerializer, FriendTechUserAuthenticatedCandleStickSerializer
 from friend_trader_trader.pagination.fifty_items import FiftyItemsPagination
 
 
@@ -53,6 +53,8 @@ class FriendTechUserViewSet(ReadOnlyModelViewSet, ThrottleMixin):
         if self.action == "list":
             return FriendTechUserListLatestPriceSerializer
         if self.action == "retrieve":
+            if self.request.user.is_authenticated:
+                return FriendTechUserAuthenticatedCandleStickSerializer
             return FriendTechUserCandleStickSerializer
         return super().get_serializer_class()
     
@@ -60,6 +62,7 @@ class FriendTechUserViewSet(ReadOnlyModelViewSet, ThrottleMixin):
         context = super().get_serializer_context()
         timeframe = self.request.query_params.get("interval", self.default_interval)
         context["interval"] = timeframe
+        context["user"] = self.request.user
         return context
     
 

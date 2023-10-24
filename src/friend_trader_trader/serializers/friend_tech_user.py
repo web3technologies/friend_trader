@@ -98,3 +98,11 @@ class FriendTechUserCandleStickSerializer(FriendTechUserSerializer):
         interval = int(self.context.get('interval'))        
         candlesticks = obj.get_candlestick_data(interval=interval)
         return candlesticks
+
+
+class FriendTechUserAuthenticatedCandleStickSerializer(FriendTechUserCandleStickSerializer):
+    is_watched = serializers.SerializerMethodField("get_is_watched")
+
+    def get_is_watched(self, obj):
+        from friend_trader_trader.models.watchlist import FriendTechUserWatchList
+        return FriendTechUserWatchList.objects.filter(user=self.context.get("user"), friend_tech_user=obj).exists()
