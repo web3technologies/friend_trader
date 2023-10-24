@@ -1,9 +1,10 @@
 from django.db.utils import IntegrityError
 
+from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_204_NO_CONTENT
 
 
 from friend_trader_core.mixins import ThrottleMixin
@@ -35,3 +36,13 @@ class FriendTechUserWatchListViewset(ModelViewSet, ThrottleMixin):
             return super().create(request, *args, **kwargs)
         except IntegrityError:
             return Response(data={"Watch Relation Already Exists"}, status=HTTP_400_BAD_REQUEST)
+    
+    @action(
+        detail=False,
+        methods=["delete"],
+        url_path="remove-watch",
+        name="remove_watch",
+    )
+    def remove_watch(self, request, *args, **kwargs):
+        self.queryset.get(user=request.user, friend_tech_user_id=request.data.get("friend_tech_user_id")).delete()
+        return Response(data={"detail": "removed"}, status=HTTP_204_NO_CONTENT)

@@ -10,7 +10,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from friend_trader_core.mixins import ThrottleMixin
 from friend_trader_trader.mixins.friend_tech_list_mixin import get_paginated_data_for_page
-from friend_trader_trader.models import FriendTechUser
+from friend_trader_trader.models import FriendTechUser, FriendTechUserWatchList
 from friend_trader_trader.serializers import FriendTechUserCandleStickSerializer, FriendTechUserListSerializer, FriendTechUserListLatestPriceSerializer
 from friend_trader_trader.pagination.fifty_items import FiftyItemsPagination
 
@@ -32,12 +32,20 @@ class FriendTechUserViewSet(ReadOnlyModelViewSet, ThrottleMixin):
     throttle_classes = [AnonRateThrottle]
     
     def list(self, request, *args, **kwargs):
+
         page = request.GET.get('page', 1)
         data = cache.get(settings.FRIEND_TECH_USER_LIST_CACHE_KEY_PATTERN.format(page=page))
         
         if data is None:
             data = get_paginated_data_for_page(page)
             cache.set(settings.FRIEND_TECH_USER_LIST_CACHE_KEY_PATTERN.format(page=page), data, 60*10)
+
+        if request.user.is_authenticated:
+            friend_tech_user_ids = [user_data['id'] for user_data in data["results"]]
+            watched_users = set(FriendTechUserWatchList.objects.filter(user=request.user, friend_tech_user_id__in=friend_tech_user_ids).values_list("friend_tech_user_id", flat=True))
+
+            for user_data in data["results"]:
+                user_data["is_watched"] = user_data["id"] in watched_users
             
         return Response(data)
     
