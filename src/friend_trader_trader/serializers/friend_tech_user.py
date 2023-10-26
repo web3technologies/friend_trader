@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from friend_trader_core.utils import convert_to_central_time
 from friend_trader_trader.models import FriendTechUser, Price
-from friend_trader_trader.serializers.price import PriceSerializer
+from friend_trader_trader.serializers.price import PriceSerializerTrade
 
 
 class FriendTechUserSerializer(serializers.ModelSerializer):
@@ -29,7 +29,7 @@ class FriendTechUserListSerializer(serializers.ModelSerializer):
         
 class FriendTechUserListLatestPriceSerializer(serializers.ModelSerializer):
     
-    latest_price = PriceSerializer(read_only=True)
+    latest_price = PriceSerializerTrade(read_only=True)
     last_trade_time = serializers.SerializerMethodField("get_last_trade_time")
     twenty_four_hour_percent_change = serializers.SerializerMethodField("get_twenty_four_hour_percent_change")
     seven_day_percent_change = serializers.SerializerMethodField("get_seven_day_percent_change")
