@@ -14,3 +14,8 @@ def setup_task_scheduler(sender, **kwargs):
         "every_ten_minutes",
         enabled='YES'
     )
+    manager.create_scheduled_task(
+        "send_tweets_task",
+        "hourly",
+        enabled="NO"
+    )
