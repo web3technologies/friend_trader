@@ -1,4 +1,6 @@
 import logging
+from decouple import config
+
 from django_celery_beat.models import CrontabSchedule, PeriodicTask
 
 logger = logging.getLogger(__name__)
@@ -46,7 +48,7 @@ class TaskScheduleManager:
         else:
             periodic_task.last_run_at = None
         finally:
-            periodic_task.enabled = True if enabled == "YES" else False
+            periodic_task.enabled = True if enabled == "YES" and config("ENVIRONMENT") == "prod" else False
             periodic_task.save()
 
     def create_scheduled_task(self, task_name, periodic_name, enabled, priority=0, expire_seconds=30):
