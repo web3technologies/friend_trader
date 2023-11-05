@@ -1,12 +1,12 @@
 from django.core.paginator import Paginator, EmptyPage
+from django.db.models import Subquery, DecimalField, OuterRef
 
-from friend_trader_trader.models import FriendTechUser
+from friend_trader_trader.models import FriendTechUser, Price
 from friend_trader_trader.serializers import FriendTechUserListLatestPriceSerializer
 
 
 def get_paginated_data_for_page(page):
     queryset = FriendTechUser.objects.exclude(latest_price=None).order_by("-latest_price__price", "id").distinct("latest_price__price", "id")
-    
     paginator = Paginator(queryset, 50) 
     paginated_queryset = paginator.page(page)
     
