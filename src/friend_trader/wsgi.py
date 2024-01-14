@@ -1,7 +1,7 @@
 import os
-
+from decouple import config
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'friend_trader.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', f'friend_trader.settings.{config("ENVIRONMENT")}')
 
 application = get_wsgi_application()

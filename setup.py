@@ -14,12 +14,13 @@ install_requires = [
     "django-phonenumber-field ~= 7.0.1",
     "djangorestframework ~= 3.14.0",
     "djangorestframework-simplejwt ~= 5.2.1",
+    "eth-utils ~= 2.2.2",
     "psycopg2-binary ~= 2.9.3",
     "python-decouple ~= 3.6",
     "requests ~= 2.28.1",
     "twilio ~= 7.16.0",
     "tweepy ~= 4.14.0",
-    "web3 ~= 6.9.0",
+    "web3 ~= 6.11.1",
     "websockets ~= 11.0.3"
 ]
 
@@ -38,7 +39,7 @@ setup(
     name="friend_trader",
     version="0.1.0",
     description="Friend Trader Application",
-    author="Web3Technologies LLC",
+    author="FriendTraderTechnologies LLC",
     author_email="zach@web3technologies.io",
     install_requires=install_requires,
     include_package_data=True,
