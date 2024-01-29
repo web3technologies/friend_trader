@@ -15,7 +15,7 @@ The FriendTrader backend will index and server via REST endpoints transaction da
 Navigate to project directory.
 ```
 python -m venv venv
-source ./ven/bin/activate
+source ./venv/bin/activate
 pip install -e .
 ```
 
